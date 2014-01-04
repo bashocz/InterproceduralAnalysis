@@ -1674,10 +1674,13 @@ namespace InterproceduralAnalysis
             switch (node.GetType().Name)
             {
                 case "OperationAstNode":
-                case "VariableAstNode":
                     //<TODO - left = ScanNode(node.Left, level + 1);>
                     //<TODO - right = ScanNode(node.right, level + 1);>
                     command = left + node.TokenText + right;
+                    break;
+
+                case "VariableAstNode":
+                    command = node.TokenText;
                     break;
 
                 case "FunctionCallAstNode":
@@ -1688,6 +1691,7 @@ namespace InterproceduralAnalysis
                     //<TODO - command = node.Name;
                     break;
 
+
                 default:
                     Console.WriteLine("Neznamy typ uzlu '{0}', '{1}'.", node.Token, node.TokenText);
                     Console.ReadKey();
@@ -1696,69 +1700,112 @@ namespace InterproceduralAnalysis
             return command;
         }
 
-        private static void GetIfCommands(IfAstNode parrent, out List<string> list)
+        private static List<string> GetIfCommands(IfAstNode parrent, List<string> commands)
         {
-            list = null;
-            
+            List<string> list = commands;
             //condition
-            list.Add(ScanNode(parrent.Condition, 0));
+            list.Add( "if (!(" + ScanNode(parrent.Condition, 0) + ")) goto "); //doplnit index pro goto
 
             //If body
+            //<TODO - foreach pro kazdy command v ifbody>
             list.Add(ScanNode(parrent.IfBody, 0));
 
             //Else body
             if (parrent.ElseBody != null)
             {
+                //<TODO - foreach pro kazdy command v elsebody>
                 list.Add(ScanNode(parrent.ElseBody, 0));
             }
+
+            return list;
         }
 
-        private static void GetForCommands(BaseAstNode command)
+        private static List<string> GetForCommands(ForAstNode parrent, List<string> commands)
         {
+            List<string> list = new List<string>();
+            list = commands;
+            
+            //Init
+            list.Add(ScanNode(parrent.Init,0));
 
+            //Condition
+            list.Add("if (!(" + ScanNode(parrent.Condition, 0) + ")) goto "); 
+            int label = list.Count - 1;
+
+            //Body
+            //<TODO - foreach pro kazdy command ve forbody>
+            list.Add(ScanNode(parrent.ForBody, 0));
+            //end foreach
+            list.Add(ScanNode(parrent.Close, 0));
+            list.Add("goto " + label); 
+
+            //Label for condition
+            list[label] += label;
+
+            return list;
         }
 
-        private static void GetWhileCommands(BaseAstNode command)
+        private static List<string> GetWhileCommands(WhileAstNode parrent, List<string> commands)
         {
+            List<string> list = new List<string>();
+            list = commands;
 
+            //Condition
+            list.Add("if (!(" + ScanNode(parrent.Condition, 0) + ")) goto ");
+            int label = list.Count - 1;
+
+            //Body
+            //<TODO - foreach pro kazdy command v body>
+            list.Add(ScanNode(parrent.WhileBody, 0));
+            list.Add("goto " + label);
+
+            //Label for condition
+            list[label] += label;
+
+            return list;
         }
 
-        private static void GetGotoCommand(BaseAstNode command)
+        private static List<string> GetGotoCommand(GotoAstNode parrent, List<string> commands)
         {
+            List<string> list = new List<string>();
+            list = commands;
 
+            //<TODO>
+
+            return list;
         }
 
-        private static void GetExprCommand(BaseAstNode command)
+        private static List<string> GetExprCommand(BaseAstNode command, List<string> commands)
         {
+            List<string> list = new List<string>();
+            list = commands;
 
-        }
+            list.Add(ScanNode(command, 0));
 
-        private static void GetUnaryExprCommand(BaseAstNode command)
-        {
-
+            return list;
         }
 
         private static List<string> GetCommandList(FunctionAstNode node)
         {
-            List<string> list = new List<string>();
+            List<string> commands = new List<string>();
             foreach(BaseAstNode command in node.Body.Commands)
             {
                 switch (command.Token)
                 {
                     case Tokens.IfCmd:
-                        GetIfCommands(command as IfAstNode, out list);
+                        commands = GetIfCommands(command as IfAstNode, commands);
                         break;
 
                     case Tokens.ForCmd:
-                        GetForCommands(command);
+                        commands = GetForCommands(command as ForAstNode, commands);
                         break;
 
                     case Tokens.WhileCmd:
-                        GetWhileCommands(command);
+                        commands = GetWhileCommands(command as WhileAstNode, commands);
                         break;
 
                     case Tokens.GotoCmd:
-                        GetGotoCommand(command);
+                        commands = GetGotoCommand(command as GotoAstNode, commands);
                         break;
 
                     case Tokens.And:
@@ -1773,17 +1820,14 @@ namespace InterproceduralAnalysis
                     case Tokens.NotEquals:
                     case Tokens.Or:
                     case Tokens.Plus:
-                        GetExprCommand(command);
-                        break;
-
                     case Tokens.MinusMinus:
                     case Tokens.PlusPlus:
-                        GetUnaryExprCommand(command);
+                        GetExprCommand(command, commands);
                         break;
 
                     case Tokens.Identifier:
                     case Tokens.ReturnCmd:
-                        //osetrit chovani
+                        //<TODO - osetrit chovani>
                         break;
 
                     default:
@@ -1793,7 +1837,7 @@ namespace InterproceduralAnalysis
                 }
             }
 
-            return list;
+            return commands;
         }
 
         private static void CreateGraph(List<string> list)
@@ -1803,7 +1847,6 @@ namespace InterproceduralAnalysis
 
         private static void GetGraphs()
         {
-            //FunctionAstNode node = fncs["main"] as FunctionAstNode;
             foreach(KeyValuePair<string,BaseAstNode> function in fncs)
             {
                 List<string> list = GetCommandList(function.Value as FunctionAstNode);
