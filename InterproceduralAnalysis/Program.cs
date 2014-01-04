@@ -1663,6 +1663,157 @@ namespace InterproceduralAnalysis
 
         #endregion Syntakticka analyza
 
+        #region Vytvoreni grafu funkci
+
+        private static string ScanNode(BaseAstNode node, int level)
+        {
+            string command = null;
+            string left = null;
+            string right = null; 
+            //Type type = node.GetType();
+            switch (node.GetType().Name)
+            {
+                case "OperationAstNode":
+                case "VariableAstNode":
+                    //<TODO - left = ScanNode(node.Left, level + 1);>
+                    //<TODO - right = ScanNode(node.right, level + 1);>
+                    command = left + node.TokenText + right;
+                    break;
+
+                case "FunctionCallAstNode":
+                    command = node.TokenText + "()";
+                    break;
+
+                case "LabelAstNode":
+                    //<TODO - command = node.Name;
+                    break;
+
+                default:
+                    Console.WriteLine("Neznamy typ uzlu '{0}', '{1}'.", node.Token, node.TokenText);
+                    Console.ReadKey();
+                    break;
+            }
+            return command;
+        }
+
+        private static void GetIfCommands(IfAstNode parrent, out List<string> list)
+        {
+            list = null;
+            
+            //condition
+            list.Add(ScanNode(parrent.Condition, 0));
+
+            //If body
+            list.Add(ScanNode(parrent.IfBody, 0));
+
+            //Else body
+            if (parrent.ElseBody != null)
+            {
+                list.Add(ScanNode(parrent.ElseBody, 0));
+            }
+        }
+
+        private static void GetForCommands(BaseAstNode command)
+        {
+
+        }
+
+        private static void GetWhileCommands(BaseAstNode command)
+        {
+
+        }
+
+        private static void GetGotoCommand(BaseAstNode command)
+        {
+
+        }
+
+        private static void GetExprCommand(BaseAstNode command)
+        {
+
+        }
+
+        private static void GetUnaryExprCommand(BaseAstNode command)
+        {
+
+        }
+
+        private static List<string> GetCommandList(FunctionAstNode node)
+        {
+            List<string> list = new List<string>();
+            foreach(BaseAstNode command in node.Body.Commands)
+            {
+                switch (command.Token)
+                {
+                    case Tokens.IfCmd:
+                        GetIfCommands(command as IfAstNode, out list);
+                        break;
+
+                    case Tokens.ForCmd:
+                        GetForCommands(command);
+                        break;
+
+                    case Tokens.WhileCmd:
+                        GetWhileCommands(command);
+                        break;
+
+                    case Tokens.GotoCmd:
+                        GetGotoCommand(command);
+                        break;
+
+                    case Tokens.And:
+                    case Tokens.Equals:
+                    case Tokens.EqualsEquals:
+                    case Tokens.Less:
+                    case Tokens.LessOrEquals:
+                    case Tokens.Minus:
+                    case Tokens.More:
+                    case Tokens.MoreOrEquals:
+                    case Tokens.Multi:
+                    case Tokens.NotEquals:
+                    case Tokens.Or:
+                    case Tokens.Plus:
+                        GetExprCommand(command);
+                        break;
+
+                    case Tokens.MinusMinus:
+                    case Tokens.PlusPlus:
+                        GetUnaryExprCommand(command);
+                        break;
+
+                    case Tokens.Identifier:
+                    case Tokens.ReturnCmd:
+                        //osetrit chovani
+                        break;
+
+                    default:
+                        Console.WriteLine("Chyba: Neznamy prikaz '{0}'.", command.Token);
+                        Console.ReadKey();
+                        break;
+                }
+            }
+
+            return list;
+        }
+
+        private static void CreateGraph(List<string> list)
+        {
+
+        }
+
+        private static void GetGraphs()
+        {
+            //FunctionAstNode node = fncs["main"] as FunctionAstNode;
+            foreach(KeyValuePair<string,BaseAstNode> function in fncs)
+            {
+                List<string> list = GetCommandList(function.Value as FunctionAstNode);
+                CreateGraph(list); //ulozit graf do vhodne globalni promenne
+
+            }
+        }
+
+        #endregion Vytvoreni grafu funkci
+
         static int Main(string[] args)
         {
             //programName = args[0];
@@ -1687,6 +1838,7 @@ namespace InterproceduralAnalysis
             }
 
             SA();
+            GetGraphs();
 
             //Console.WriteLine("Interproceduralni analyza programu: start");
             //if (!XXX())
