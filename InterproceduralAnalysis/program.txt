@@ -1,9 +1,37 @@
-﻿var a,b = 5, c= b, k=--a, l=b++,m=3*(x+2);
-var r=3*x+2*z+8;
+﻿var a,b = 5, c= b, k=--a, l=b++,m=3*(l+2);
+var r=3*a+2*c+8;
 var x;
-var y = 5 + 1*x - 6*(z+2) + 4*w;
-var z=1*(2 + 3*x++ - 4*(++z +5) + 6*w--) + 7*(8 + 9*x++ - 10*(++z +11) + 12*w--) + 13*(14 + 15*x++ - 16*(++z +17) + 18*w--) + 19*(20 + 21*x++ - 22*(++z +23) + 24*w--) + 231465978;
-var w=7*(5 + 1* --x - 6*(--z+2) + 4* ++w);
+var y = 5 + 1*x - 6*(r+2) + 4*m;
+var z=1*(2 + 3*x++ - 4*(++y +5) + 6*r--) + 7*(8 + 9*x++ - 10*(++y +11) + 12*r--) + 13*(14 + 15*x++ - 16*(++y +17) + 18*r--) + 19*(20 + 21*x++ - 22*(++y +23) + 24*r--) + 231465978;
+var w=7*(5 + 1* --x - 6*(--z+2) + 4* ++r);
+
+var e;
+var f,g,h;
+var i,j;
+
+function difference(){
+while( b > a ){
+b--;
+++x;
+if(b!=x){
+a = x - b;
+}
+}
+f = a - b;
+return f;
+}
+
+function count(){
+	e = a + b;
+	if (i + 3 >= j * 8 && i * 9 < j++){ 
+		/* e =*/ difference();      // volani funkce v expression jeste neumime :-)
+		for(i = 0; i < 10; i++)
+{
+  x = i;
+    }
+}
+return e;
+}
 
 function main(){
 if (!(a == b) && ((y > z) || (w >= ++m))){
@@ -27,31 +55,4 @@ vysledek = 20- 5;      // toto bude chyba, neznamy indetifikator ale to jeste ne
 
 one:
 c = a;
-}
-
-var e;
-var f,g,h;
-
-function count(){
-	e = a + b;
-	if (i + 3 >= j * 8 && i * 9 < j++){ 
-		/* e =*/ difference();      // volani funkce v expression jeste neumime :-)
-		for(i = 0; i < 10; i++)
-{
-  x = i;
-    }
-}
-return e;
-}
-
-function difference(){
-while( b > a ){
-b--;
-++x;
-if(b!=x){
-a = x - b;
-}
-}
-f = a - b;
-return f;
 }

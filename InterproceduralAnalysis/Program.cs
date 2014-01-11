@@ -489,7 +489,7 @@ namespace InterproceduralAnalysis
 
                 if (vars.Keys.Contains(node.TokenText))
                 {
-                    errorMsg = string.Format("Promenna '{0}' jiz byla definovana, radek {1}, sloupec {2}", node.TokenText, node.LineStart, node.ColStart);
+                    errorMsg = string.Format("Promenna '{0}' jiz byla deklarovana, radek {1}, sloupec {2}", node.TokenText, node.LineStart, node.ColStart);
                     node = new BaseAstNode { Token = Tokens.Error };
                     continue;
                 }
@@ -549,7 +549,7 @@ namespace InterproceduralAnalysis
             }
             if (fncs.Keys.Contains(node.TokenText))
             {
-                errorMsg = string.Format("Funkce '{0}' jiz byla definovana, radek {1}, sloupec {2}", node.TokenText, node.LineStart, node.ColStart);
+                errorMsg = string.Format("Funkce '{0}' jiz byla deklarovana, radek {1}, sloupec {2}", node.TokenText, node.LineStart, node.ColStart);
                 return new BaseAstNode { Token = Tokens.Error };
             }
             fncs.Add(node.TokenText, fnc);
@@ -719,6 +719,9 @@ namespace InterproceduralAnalysis
                     node = new BaseAstNode { Token = Tokens.Error };
                     break;
             }
+
+            if (node.Token == Tokens.Error)
+                return node;
 
             if (semicolon)
             {
@@ -1018,6 +1021,12 @@ namespace InterproceduralAnalysis
                 return new BaseAstNode { Token = Tokens.Error };
             }
 
+            if (!fncs.Keys.Contains(cmd.TokenText))
+            {
+                errorMsg = string.Format("Funkce '{0}' doposud nebyla deklarovana, radek {1}, sloupec {2}", cmd.TokenText, cmd.LineStart, cmd.ColStart);
+                return new BaseAstNode { Token = Tokens.Error };
+            }
+
             BaseAstNode pl = GetAstNode();
             if (pl.Token != Tokens.ParenthesisLeft)
             {
@@ -1150,6 +1159,12 @@ namespace InterproceduralAnalysis
                     return false;
 
                 case Tokens.Identifier:
+                    if (!vars.Keys.Contains(node.TokenText))
+                    {
+                        errorMsg = string.Format("Promenna '{0}' doposud nebyla deklarovana, radek {1}, sloupec {2}", node.TokenText, node.LineStart, node.ColStart);
+                        node = new BaseAstNode { Token = Tokens.Error };
+                        return false;
+                    }
                     node = ConvertToVariable(node);
                     if ((nextReadToken.Token == Tokens.PlusPlus) || (nextReadToken.Token == Tokens.MinusMinus))
                     {
@@ -1206,6 +1221,12 @@ namespace InterproceduralAnalysis
                     if (node.Token != Tokens.Identifier)
                     {
                         errorMsg = string.Format("Je ocekavan identifikator promenne, radek {0}, sloupec {1}", node.LineStart, node.ColStart);
+                        node = new BaseAstNode { Token = Tokens.Error };
+                        return false;
+                    }
+                    if (!vars.Keys.Contains(node.TokenText))
+                    {
+                        errorMsg = string.Format("Promenna '{0}' doposud nebyla deklarovana, radek {1}, sloupec {2}", node.TokenText, node.LineStart, node.ColStart);
                         node = new BaseAstNode { Token = Tokens.Error };
                         return false;
                     }
@@ -1333,6 +1354,8 @@ namespace InterproceduralAnalysis
                                 return new BaseAstNode { Token = Tokens.Error };
                             }
                             BaseAstNode nodePRn = GetSubExprAST(out node, level + 1, isCond);
+                            if (nodePRn.Token == Tokens.Error)
+                                return nodePRn;
                             if (nodePRn.Token != Tokens.ParenthesisRight)
                             {
                                 errorMsg = string.Format("Vyraz neni korektne ukoncen pravou zavorkou, radek {0}, sloupec {1}", nodePRn.LineStart, nodePRn.ColStart);
@@ -1350,6 +1373,8 @@ namespace InterproceduralAnalysis
 
                     case Tokens.ParenthesisLeft:
                         BaseAstNode nodePR = GetSubExprAST(out node, level + 1, isCond);
+                            if (nodePR.Token == Tokens.Error)
+                                return nodePR;
                         if (nodePR.Token != Tokens.ParenthesisRight)
                         {
                             errorMsg = string.Format("Vyraz neni korektne ukoncen pravou zavorkou, radek {0}, sloupec {1}", nodePR.LineStart, nodePR.ColStart);
@@ -1360,6 +1385,9 @@ namespace InterproceduralAnalysis
                     case Tokens.ParenthesisRight:
                         errorMsg = string.Format("Chybna prava zavorka, radek {0}, sloupec {1}", node.LineStart, node.ColStart);
                         return new BaseAstNode { Token = Tokens.Error };
+
+                    case Tokens.Error:
+                        return node;
 
                     default:
                         errorMsg = string.Format("Prazdny vyraz, radek {0}, sloupec {1}", node.LineStart, node.ColStart);
@@ -1414,6 +1442,8 @@ namespace InterproceduralAnalysis
                                     return new BaseAstNode { Token = Tokens.Error };
                                 }
                                 BaseAstNode nodePRn = GetSubExprAST(out node, level + 1, isCond);
+                                if (nodePRn.Token == Tokens.Error)
+                                    return nodePRn;
                                 if (nodePRn.Token != Tokens.ParenthesisRight)
                                 {
                                     errorMsg = string.Format("Vyraz neni korektne ukoncen pravou zavorkou, radek {0}, sloupec {1}", nodePRn.LineStart, nodePRn.ColStart);
@@ -1431,12 +1461,17 @@ namespace InterproceduralAnalysis
 
                         case Tokens.ParenthesisLeft:
                             BaseAstNode nodePR = GetSubExprAST(out node, level + 1, isCond);
+                            if (nodePR.Token == Tokens.Error)
+                                return nodePR;
                             if (nodePR.Token != Tokens.ParenthesisRight)
                             {
                                 errorMsg = string.Format("Vyraz neni korektne ukoncen pravou zavorkou, radek {0}, sloupec {1}", nodePR.LineStart, nodePR.ColStart);
                                 return new BaseAstNode { Token = Tokens.Error };
                             }
                             break;
+
+                        case Tokens.Error:
+                            return node;
 
                         default:
                             errorMsg = string.Format("Nespravne formatovany vyraz, je ocekavan cislo, promenna nebo leva zavorka, radek {0}, sloupec {1}", node.LineStart, node.ColStart);
