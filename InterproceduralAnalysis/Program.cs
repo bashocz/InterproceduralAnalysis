@@ -312,26 +312,29 @@ namespace InterproceduralAnalysis
 
         private static Dictionary<Tokens, int> pri;
 
+        private static int opMax;
+
         private static void InitSA()
         {
             vars = new Dictionary<string, BaseAstNode>();
             fncs = new Dictionary<string, BaseAstNode>();
             pri = new Dictionary<Tokens, int>();
-            pri.Add(Tokens.Equals, 0);
-            pri.Add(Tokens.Plus, 10);
-            pri.Add(Tokens.Minus, 10);
-            pri.Add(Tokens.Multi, 20);
-            pri.Add(Tokens.PlusPlus, 30);
-            pri.Add(Tokens.MinusMinus, 30);
+            pri.Add(Tokens.PlusPlus, 0);
+            pri.Add(Tokens.MinusMinus, 0);
+            pri.Add(Tokens.Neg, 0);
+            pri.Add(Tokens.Multi, 10);
+            pri.Add(Tokens.Plus, 20);
+            pri.Add(Tokens.Minus, 20);
+            pri.Add(Tokens.Less, 30);
+            pri.Add(Tokens.More, 30);
+            pri.Add(Tokens.LessOrEquals, 30);
+            pri.Add(Tokens.MoreOrEquals, 30);
             pri.Add(Tokens.EqualsEquals, 40);
-            pri.Add(Tokens.Less, 40);
-            pri.Add(Tokens.More, 40);
-            pri.Add(Tokens.LessOrEquals, 40);
-            pri.Add(Tokens.MoreOrEquals, 40);
             pri.Add(Tokens.NotEquals, 40);
-            pri.Add(Tokens.Or, 50);
             pri.Add(Tokens.And, 50);
-            pri.Add(Tokens.Neg, 60);
+            pri.Add(Tokens.Or, 60);
+            pri.Add(Tokens.Equals, 70);
+            opMax = 71;
         }
 
         private static VariableAstNode ConvertToVariable(BaseAstNode node)
@@ -1107,6 +1110,16 @@ namespace InterproceduralAnalysis
 
         #region SA - expression
 
+        private static BaseAstNode GetExprAST(out BaseAstNode expr)
+        {
+            return GetSubExprAST(out expr, 0, false);
+        }
+
+        private static BaseAstNode GetCondAST(out BaseAstNode expr)
+        {
+            return GetSubExprAST(out expr, 0, true);
+        }
+
         private static bool TryParseNumber(string str, out int number)
         {
             number = 0;
@@ -1205,7 +1218,7 @@ namespace InterproceduralAnalysis
             }
         }
 
-        private static bool GetExprBinaryOperationNode(out BaseAstNode node)
+        private static bool GetExprBinaryOperationNode(out BaseAstNode node, bool isCond)
         {
             node = GetAstNode();
             switch (node.Token)
@@ -1219,6 +1232,17 @@ namespace InterproceduralAnalysis
                 case Tokens.Minus:
                 case Tokens.Multi:
                     return true;
+
+                case Tokens.EqualsEquals:
+                case Tokens.Less:
+                case Tokens.More:
+                case Tokens.LessOrEquals:
+                case Tokens.MoreOrEquals:
+                case Tokens.NotEquals:
+
+                case Tokens.Or:
+                case Tokens.And:
+                    return isCond;
 
                 default:
                     return false;
@@ -1240,195 +1264,6 @@ namespace InterproceduralAnalysis
                 case Tokens.Multi:
                 case Tokens.PlusPlus:
                 case Tokens.MinusMinus:
-                    return true;
-
-                default:
-                    return false;
-            }
-        }
-
-        private static BaseAstNode GetExprAST(out BaseAstNode expr)
-        {
-            return GetSubExprAST(out expr, 0);
-        }
-
-        private static BaseAstNode GetSubExprAST(out BaseAstNode expr, int level)
-        {
-            expr = null;
-
-            BaseAstNode node = null;
-            List<BaseAstNode> nodes = new List<BaseAstNode>();
-
-            // number or identifier or left parenthesis
-            if (!GetOperandNode(out node))
-            {
-                switch (node.Token)
-                {
-                    case Tokens.ParenthesisLeft:
-                        BaseAstNode nodePR = GetSubExprAST(out node, level + 1);
-                        if (nodePR.Token != Tokens.ParenthesisRight)
-                        {
-                            errorMsg = string.Format("Vyraz neni korektne ukoncen pravou zavorkou, radek {0}, sloupec {1}", nodePR.LineStart, nodePR.ColStart);
-                            return new BaseAstNode { Token = Tokens.Error };
-                        }
-                        break;
-
-                    case Tokens.ParenthesisRight:
-                        errorMsg = string.Format("Chybna prava zavorka, radek {0}, sloupec {1}", node.LineStart, node.ColStart);
-                        return new BaseAstNode { Token = Tokens.Error };
-
-                    default:
-                        errorMsg = string.Format("Prazdny vyraz, radek {0}, sloupec {1}", node.LineStart, node.ColStart);
-                        return new BaseAstNode { Token = Tokens.Error };
-                }
-            }
-
-            nodes.Add(node);
-
-            while (IsExprToken(nextReadToken.Token))
-            {
-                if (!GetExprBinaryOperationNode(out node))
-                {
-                    switch (node.Token)
-                    {
-                        case Tokens.Identifier:
-                        case Tokens.Number:
-                        case Tokens.ParenthesisLeft:
-                            errorMsg = string.Format("Nespravne formatovany vyraz, je ocekavan operator, radek {0}, sloupec {1}", node.LineStart, node.ColStart);
-                            return new BaseAstNode { Token = Tokens.Error };
-                    }
-                    if (node.Token == Tokens.ParenthesisRight)
-                    {
-                        if (level == 0)
-                        {
-                            errorMsg = string.Format("Chybna prava zavorka, radek {0}, sloupec {1}", node.LineStart, node.ColStart);
-                            return new BaseAstNode { Token = Tokens.Error };
-                        }
-                        break;
-                    }
-                    continue;
-                }
-                if ((node.Token == Tokens.Multi) && (nodes[nodes.Count - 1].Token != Tokens.Number))
-                {
-                    errorMsg = string.Format("Pred nasobenim muze byt pouze cislo, radek {0}, sloupec {1}", node.LineStart, node.ColStart);
-                    return new BaseAstNode { Token = Tokens.Error };
-                }
-                nodes.Add(node);
-
-                if (!GetOperandNode(out node))
-                {
-                    switch (node.Token)
-                    {
-                        case Tokens.ParenthesisLeft:
-                            BaseAstNode nodePR = GetSubExprAST(out node, level + 1);
-                            if (nodePR.Token != Tokens.ParenthesisRight)
-                            {
-                                errorMsg = string.Format("Vyraz neni korektne ukoncen pravou zavorkou, radek {0}, sloupec {1}", nodePR.LineStart, nodePR.ColStart);
-                                return new BaseAstNode { Token = Tokens.Error };
-                            }
-                            break;
-
-                        default:
-                            errorMsg = string.Format("Nespravne formatovany vyraz, je ocekavan cislo, promenna nebo leva zavorka, radek {0}, sloupec {1}", node.LineStart, node.ColStart);
-                            return new BaseAstNode { Token = Tokens.Error };
-                    }
-                }
-                nodes.Add(node);
-            }
-
-            if (nodes.Count == 0)
-            {
-                errorMsg = string.Format("Nespravne formatovany vyraz, je ocekavan cislo, promenna nebo leva zavorka, radek {0}, sloupec {1}", node.LineStart, node.ColStart);
-                return new BaseAstNode { Token = Tokens.Error };
-            }
-
-            if (nodes.Count < 2) // number or variable only
-            {
-                expr = nodes[0];
-            }
-            else
-            {
-                // all *
-                int i = 0;
-                while (i < nodes.Count)
-                {
-                    OperationAstNode op = nodes[i] as OperationAstNode;
-                    if ((op != null) && (op.Token == Tokens.Multi))
-                    {
-                        if ((i < 1) || (i >= (nodes.Count - 1)))
-                        {
-                            errorMsg = "Nespravne formatovany vyraz...";
-                            return new BaseAstNode { Token = Tokens.Error };
-                        }
-                        op.Right = nodes[i + 1];
-                        op.Left = nodes[i - 1];
-                        nodes.RemoveAt(i + 1);
-                        nodes.RemoveAt(i - 1);
-                    }
-                    i++;
-                }
-
-                if (nodes.Count < 2)
-                {
-                    expr = nodes[0];
-                }
-                else
-                {
-                    // all + and -
-                    i = 1;
-                    BaseAstNode left = nodes[0];
-                    while (i < nodes.Count)
-                    {
-                        if (i >= (nodes.Count - 1))
-                        {
-                            errorMsg = "Nespravne formatovany vyraz...";
-                            return new BaseAstNode { Token = Tokens.Error };
-                        }
-                        OperationAstNode op = nodes[i] as OperationAstNode;
-                        if (op == null)
-                        {
-                            errorMsg = "Nespravne formatovany vyraz...";
-                            return new BaseAstNode { Token = Tokens.Error };
-                        }
-                        op.Left = left;
-                        op.Right = nodes[i + 1];
-                        left = op;
-                        i += 2;
-                    }
-                    expr = left;
-                }
-            }
-
-            return node;
-        }
-
-        #endregion SA - expression
-
-        #region SA - condition
-
-        private static bool GetCondBinaryOperationNode(out BaseAstNode node)
-        {
-            node = GetAstNode();
-            switch (node.Token)
-            {
-                case Tokens.End:
-                    errorMsg = string.Format("Konec programu, vyraz neni korektne ukoncen, radek {0}, sloupec {1}", node.LineStart, node.ColStart);
-                    node = new BaseAstNode { Token = Tokens.Error };
-                    return false;
-
-                case Tokens.Plus:
-                case Tokens.Minus:
-                case Tokens.Multi:
-
-                case Tokens.EqualsEquals:
-                case Tokens.Less:
-                case Tokens.More:
-                case Tokens.LessOrEquals:
-                case Tokens.MoreOrEquals:
-                case Tokens.NotEquals:
-
-                case Tokens.Or:
-                case Tokens.And:
                     return true;
 
                 default:
@@ -1468,12 +1303,14 @@ namespace InterproceduralAnalysis
             }
         }
 
-        private static BaseAstNode GetCondAST(out BaseAstNode expr)
+        private static bool IsWantedToken(Tokens token, bool isCond)
         {
-            return GetSubCondAST(out expr, 0);
+            if (isCond)
+                return IsCondToken(token);
+            return IsExprToken(token);
         }
 
-        private static BaseAstNode GetSubCondAST(out BaseAstNode expr, int level)
+        private static BaseAstNode GetSubExprAST(out BaseAstNode expr, int level, bool isCond)
         {
             expr = null;
 
@@ -1485,8 +1322,34 @@ namespace InterproceduralAnalysis
             {
                 switch (node.Token)
                 {
+                    case Tokens.Neg:
+                        if (isCond)
+                        {
+                            OperationAstNode nodeN = (OperationAstNode)node;
+                            GetOperandNode(out node); // must be '('
+                            if (node.Token != Tokens.ParenthesisLeft)
+                            {
+                                errorMsg = string.Format("Po operaci negace je ocekavana leva zavorka, radek {0}, sloupec {1}", node.LineStart, node.ColStart);
+                                return new BaseAstNode { Token = Tokens.Error };
+                            }
+                            BaseAstNode nodePRn = GetSubExprAST(out node, level + 1, isCond);
+                            if (nodePRn.Token != Tokens.ParenthesisRight)
+                            {
+                                errorMsg = string.Format("Vyraz neni korektne ukoncen pravou zavorkou, radek {0}, sloupec {1}", nodePRn.LineStart, nodePRn.ColStart);
+                                return new BaseAstNode { Token = Tokens.Error };
+                            }
+                            nodeN.Right = node;
+                            node = nodeN;
+                        }
+                        else
+                        {
+                            errorMsg = string.Format("Chybna operace negace, radek {0}, sloupec {1}", node.LineStart, node.ColStart);
+                            return new BaseAstNode { Token = Tokens.Error };
+                        }
+                        break;
+
                     case Tokens.ParenthesisLeft:
-                        BaseAstNode nodePR = GetSubCondAST(out node, level + 1);
+                        BaseAstNode nodePR = GetSubExprAST(out node, level + 1, isCond);
                         if (nodePR.Token != Tokens.ParenthesisRight)
                         {
                             errorMsg = string.Format("Vyraz neni korektne ukoncen pravou zavorkou, radek {0}, sloupec {1}", nodePR.LineStart, nodePR.ColStart);
@@ -1506,9 +1369,9 @@ namespace InterproceduralAnalysis
 
             nodes.Add(node);
 
-            while (IsCondToken(nextReadToken.Token))
+            while (IsWantedToken(nextReadToken.Token, isCond))
             {
-                if (!GetCondBinaryOperationNode(out node))
+                if (!GetExprBinaryOperationNode(out node, isCond))
                 {
                     switch (node.Token)
                     {
@@ -1529,7 +1392,7 @@ namespace InterproceduralAnalysis
                     }
                     continue;
                 }
-                if ((node.Token == Tokens.Multi) && (nodes[nodes.Count - 1].Token != Tokens.Number))
+                if (!isCond && ((node.Token == Tokens.Multi) && (nodes[nodes.Count - 1].Token != Tokens.Number)))
                 {
                     errorMsg = string.Format("Pred nasobenim muze byt pouze cislo, radek {0}, sloupec {1}", node.LineStart, node.ColStart);
                     return new BaseAstNode { Token = Tokens.Error };
@@ -1540,8 +1403,34 @@ namespace InterproceduralAnalysis
                 {
                     switch (node.Token)
                     {
+                        case Tokens.Neg:
+                            if (isCond)
+                            {
+                                OperationAstNode nodeN = (OperationAstNode)node;
+                                GetOperandNode(out node); // must be '('
+                                if (node.Token != Tokens.ParenthesisLeft)
+                                {
+                                    errorMsg = string.Format("Po operaci negace je ocekavana leva zavorka, radek {0}, sloupec {1}", node.LineStart, node.ColStart);
+                                    return new BaseAstNode { Token = Tokens.Error };
+                                }
+                                BaseAstNode nodePRn = GetSubExprAST(out node, level + 1, isCond);
+                                if (nodePRn.Token != Tokens.ParenthesisRight)
+                                {
+                                    errorMsg = string.Format("Vyraz neni korektne ukoncen pravou zavorkou, radek {0}, sloupec {1}", nodePRn.LineStart, nodePRn.ColStart);
+                                    return new BaseAstNode { Token = Tokens.Error };
+                                }
+                                nodeN.Right = node;
+                                node = nodeN;
+                            }
+                            else
+                            {
+                                errorMsg = string.Format("Chybna operace negace, radek {0}, sloupec {1}", node.LineStart, node.ColStart);
+                                return new BaseAstNode { Token = Tokens.Error };
+                            }
+                            break;
+
                         case Tokens.ParenthesisLeft:
-                            BaseAstNode nodePR = GetSubCondAST(out node, level + 1);
+                            BaseAstNode nodePR = GetSubExprAST(out node, level + 1, isCond);
                             if (nodePR.Token != Tokens.ParenthesisRight)
                             {
                                 errorMsg = string.Format("Vyraz neni korektne ukoncen pravou zavorkou, radek {0}, sloupec {1}", nodePR.LineStart, nodePR.ColStart);
@@ -1563,67 +1452,48 @@ namespace InterproceduralAnalysis
                 return new BaseAstNode { Token = Tokens.Error };
             }
 
-            if (nodes.Count < 2) // number or variable only
+            int op = 10;
+            while ((op < opMax) && (nodes.Count > 1))
             {
-                expr = nodes[0];
-            }
-            else
-            {
-                // all *
-                int i = 0;
+                int i = 1;
                 while (i < nodes.Count)
                 {
-                    OperationAstNode op = nodes[i] as OperationAstNode;
-                    if ((op != null) && (op.Token == Tokens.Multi))
+                    if (i >= (nodes.Count - 1))
                     {
-                        if ((i < 1) || (i >= (nodes.Count - 1)))
-                        {
-                            errorMsg = "Nespravne formatovany vyraz...";
-                            return new BaseAstNode { Token = Tokens.Error };
-                        }
-                        op.Right = nodes[i + 1];
-                        op.Left = nodes[i - 1];
+                        errorMsg = "Nespravne formatovany vyraz... chybny pocet operandu";
+                        return new BaseAstNode { Token = Tokens.Error };
+                    }
+                    OperationAstNode oper = nodes[i] as OperationAstNode;
+                    if (oper == null)
+                    {
+                        errorMsg = "Nespravne formatovany vyraz... uzel neni operace";
+                        return new BaseAstNode { Token = Tokens.Error };
+                    }
+
+                    if (oper.Priority == op)
+                    {
+                        oper.Left = nodes[i - 1];
+                        oper.Right = nodes[i + 1];
                         nodes.RemoveAt(i + 1);
                         nodes.RemoveAt(i - 1);
                     }
-                    i++;
+                    else
+                        i += 2;
                 }
 
-                if (nodes.Count < 2)
-                {
-                    expr = nodes[0];
-                }
-                else
-                {
-                    // all + and -
-                    i = 1;
-                    BaseAstNode left = nodes[0];
-                    while (i < nodes.Count)
-                    {
-                        if (i >= (nodes.Count - 1))
-                        {
-                            errorMsg = "Nespravne formatovany vyraz...";
-                            return new BaseAstNode { Token = Tokens.Error };
-                        }
-                        OperationAstNode op = nodes[i] as OperationAstNode;
-                        if (op == null)
-                        {
-                            errorMsg = "Nespravne formatovany vyraz...";
-                            return new BaseAstNode { Token = Tokens.Error };
-                        }
-                        op.Left = left;
-                        op.Right = nodes[i + 1];
-                        left = op;
-                        i += 2;
-                    }
-                    expr = left;
-                }
+                op += 10; // increase operation priority
             }
+            if (nodes.Count != 1)
+            {
+                errorMsg = "Nespravne formatovany vyraz... nedobre utvoreny AST";
+                return new BaseAstNode { Token = Tokens.Error };
+            }
+            expr = nodes[0];
 
             return node;
         }
 
-        #endregion SA - condition
+        #endregion SA - expression
 
         private static void SA()
         {
@@ -1663,204 +1533,10 @@ namespace InterproceduralAnalysis
 
         #endregion Syntakticka analyza
 
-        #region Vytvoreni grafu funkci
-
-        private static string ScanNode(BaseAstNode node, int level)
-        {
-            string command = null;
-            string left = null;
-            string right = null; 
-            //Type type = node.GetType();
-            switch (node.GetType().Name)
-            {
-                case "OperationAstNode":
-                    //<TODO - left = ScanNode(node.Left, level + 1);>
-                    //<TODO - right = ScanNode(node.right, level + 1);>
-                    command = left + node.TokenText + right;
-                    break;
-
-                case "VariableAstNode":
-                    command = node.TokenText;
-                    break;
-
-                case "FunctionCallAstNode":
-                    command = node.TokenText + "()";
-                    break;
-
-                case "LabelAstNode":
-                    //<TODO - command = node.Name;
-                    break;
-
-
-                default:
-                    Console.WriteLine("Neznamy typ uzlu '{0}', '{1}'.", node.Token, node.TokenText);
-                    Console.ReadKey();
-                    break;
-            }
-            return command;
-        }
-
-        private static List<string> GetIfCommands(IfAstNode parrent, List<string> commands)
-        {
-            List<string> list = commands;
-            //condition
-            list.Add( "if (!(" + ScanNode(parrent.Condition, 0) + ")) goto "); //doplnit index pro goto
-
-            //If body
-            //<TODO - foreach pro kazdy command v ifbody>
-            list.Add(ScanNode(parrent.IfBody, 0));
-
-            //Else body
-            if (parrent.ElseBody != null)
-            {
-                //<TODO - foreach pro kazdy command v elsebody>
-                list.Add(ScanNode(parrent.ElseBody, 0));
-            }
-
-            return list;
-        }
-
-        private static List<string> GetForCommands(ForAstNode parrent, List<string> commands)
-        {
-            List<string> list = new List<string>();
-            list = commands;
-            
-            //Init
-            list.Add(ScanNode(parrent.Init,0));
-
-            //Condition
-            list.Add("if (!(" + ScanNode(parrent.Condition, 0) + ")) goto "); 
-            int label = list.Count - 1;
-
-            //Body
-            //<TODO - foreach pro kazdy command ve forbody>
-            list.Add(ScanNode(parrent.ForBody, 0));
-            //end foreach
-            list.Add(ScanNode(parrent.Close, 0));
-            list.Add("goto " + label); 
-
-            //Label for condition
-            list[label] += label;
-
-            return list;
-        }
-
-        private static List<string> GetWhileCommands(WhileAstNode parrent, List<string> commands)
-        {
-            List<string> list = new List<string>();
-            list = commands;
-
-            //Condition
-            list.Add("if (!(" + ScanNode(parrent.Condition, 0) + ")) goto ");
-            int label = list.Count - 1;
-
-            //Body
-            //<TODO - foreach pro kazdy command v body>
-            list.Add(ScanNode(parrent.WhileBody, 0));
-            list.Add("goto " + label);
-
-            //Label for condition
-            list[label] += label;
-
-            return list;
-        }
-
-        private static List<string> GetGotoCommand(GotoAstNode parrent, List<string> commands)
-        {
-            List<string> list = new List<string>();
-            list = commands;
-
-            //<TODO>
-
-            return list;
-        }
-
-        private static List<string> GetExprCommand(BaseAstNode command, List<string> commands)
-        {
-            List<string> list = new List<string>();
-            list = commands;
-
-            list.Add(ScanNode(command, 0));
-
-            return list;
-        }
-
-        private static List<string> GetCommandList(FunctionAstNode node)
-        {
-            List<string> commands = new List<string>();
-            foreach(BaseAstNode command in node.Body.Commands)
-            {
-                switch (command.Token)
-                {
-                    case Tokens.IfCmd:
-                        commands = GetIfCommands(command as IfAstNode, commands);
-                        break;
-
-                    case Tokens.ForCmd:
-                        commands = GetForCommands(command as ForAstNode, commands);
-                        break;
-
-                    case Tokens.WhileCmd:
-                        commands = GetWhileCommands(command as WhileAstNode, commands);
-                        break;
-
-                    case Tokens.GotoCmd:
-                        commands = GetGotoCommand(command as GotoAstNode, commands);
-                        break;
-
-                    case Tokens.And:
-                    case Tokens.Equals:
-                    case Tokens.EqualsEquals:
-                    case Tokens.Less:
-                    case Tokens.LessOrEquals:
-                    case Tokens.Minus:
-                    case Tokens.More:
-                    case Tokens.MoreOrEquals:
-                    case Tokens.Multi:
-                    case Tokens.NotEquals:
-                    case Tokens.Or:
-                    case Tokens.Plus:
-                    case Tokens.MinusMinus:
-                    case Tokens.PlusPlus:
-                        GetExprCommand(command, commands);
-                        break;
-
-                    case Tokens.Identifier:
-                    case Tokens.ReturnCmd:
-                        //<TODO - osetrit chovani>
-                        break;
-
-                    default:
-                        Console.WriteLine("Chyba: Neznamy prikaz '{0}'.", command.Token);
-                        Console.ReadKey();
-                        break;
-                }
-            }
-
-            return commands;
-        }
-
-        private static void CreateGraph(List<string> list)
-        {
-
-        }
-
-        private static void GetGraphs()
-        {
-            foreach(KeyValuePair<string,BaseAstNode> function in fncs)
-            {
-                List<string> list = GetCommandList(function.Value as FunctionAstNode);
-                CreateGraph(list); //ulozit graf do vhodne globalni promenne
-
-            }
-        }
-
-        #endregion Vytvoreni grafu funkci
-
         static int Main(string[] args)
         {
             //programName = args[0];
-            programFile = @"C:\Users\Míša\Documents\Visual Studio 2010\Projects\InterproceduralAnalysis\InterproceduralAnalysis\program.txt";
+            programFile = @"D:\projects\github\InterproceduralAnalysis\InterproceduralAnalysis\program.txt";
             //printLA = arg[1];
             printLA = true;
 
@@ -1881,15 +1557,6 @@ namespace InterproceduralAnalysis
             }
 
             SA();
-            GetGraphs();
-
-            //Console.WriteLine("Interproceduralni analyza programu: start");
-            //if (!XXX())
-            //{
-            //    Console.ReadKey();
-            //    return -1;
-            //}
-            //Console.WriteLine("Interproceduralni analyza programu: konec");
 
             Console.ReadKey();
             return 0;
