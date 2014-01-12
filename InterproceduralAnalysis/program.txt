@@ -53,7 +53,7 @@ else {
 	a = x + 3*y - 2*z;
 	b = 6 * (x - y - z);
 }
-vysledek = 20- 5;      // toto bude chyba, neznamy indetifikator ale to jeste neumime :-)
+//vysledek = 20- 5;      // toto bude chyba, neznamy indetifikator ale to jeste neumime :-)
 
 /* c =*/ count();           // volani funkce v expression jeste neumime :-)
 

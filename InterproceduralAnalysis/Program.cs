@@ -645,7 +645,7 @@ namespace InterproceduralAnalysis
         {
             if (st == null)
             {
-                errorMsg = "Chybne volana funkce 'GetFunctionNode(FunctionAstNode fnc)', parametr 'fnc' je null";
+                errorMsg = "Chybne volana funkce 'GetStatementAST(StatementAstNode st)', parametr 'st' je null";
                 return new BaseAstNode { Token = Tokens.Error };
             }
 
@@ -1898,7 +1898,7 @@ namespace InterproceduralAnalysis
         static int Main(string[] args)
         {
             //programName = args[0];
-            programFile = @"D:\projects\github\InterproceduralAnalysis\InterproceduralAnalysis\program.txt";
+            programFile = @"C:\Users\Míša\Documents\Visual Studio 2010\Projects\InterproceduralAnalysis\InterproceduralAnalysis\program.txt";
             //printLA = arg[1];
             printLA = true;
             printSA = true;
