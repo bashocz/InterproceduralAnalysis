@@ -726,7 +726,7 @@ namespace InterproceduralAnalysis
             block.Add(cond);
 
             if (node.ElseBody != null)
-                block.Add(new GotoAstNode { Token = Tokens.GotoCmd, TokenText = "goto", Label = new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$IfElse{0}", idx) } });
+                block.Add(new GotoAstNode { Token = Tokens.GotoCmd, TokenText = "goto", Label = new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$IfFalse{0}", idx) } });
             else
                 block.Add(new GotoAstNode { Token = Tokens.GotoCmd, TokenText = "goto", Label = new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$IfEnd{0}", idx) } });
 
@@ -1232,6 +1232,11 @@ namespace InterproceduralAnalysis
                 errorMsg = "Chybne volana funkce 'GetAssignmentAST(VariableAstNode var)', parametr 'var' je null";
                 return new BaseAstNode { Token = Tokens.Error };
             }
+            if (!vars.Keys.Contains(var.TokenText))
+            {
+                errorMsg = string.Format("Promenna '{0}' doposud nebyla deklarovana, radek {1}, sloupec {2}", var.TokenText, var.LineStart, var.ColStart);
+                return new BaseAstNode { Token = Tokens.Error };
+            }
 
             OperationAstNode cmd = GetAstNode() as OperationAstNode;
             if ((cmd == null) || (cmd.Token != Tokens.Equals))
@@ -1707,7 +1712,7 @@ namespace InterproceduralAnalysis
 
         #endregion SA - expression
 
-        private static void SA()
+        private static bool SA()
         {
             InitSA();
 
@@ -1740,7 +1745,11 @@ namespace InterproceduralAnalysis
             }
 
             if (node.Token == Tokens.Error)
+            {
                 Console.WriteLine("Error: '{0}'", errorMsg);
+                return false;
+            }
+            return true;
         }
 
         #endregion Syntakticka analyza
@@ -1910,7 +1919,11 @@ namespace InterproceduralAnalysis
                 return -1;
             }
 
-            SA();
+            if (!SA())
+            {
+                Console.ReadKey();
+                return -1;
+            }
 
             SeA();
 
