@@ -592,12 +592,49 @@ namespace InterproceduralAnalysis
                 return new BaseAstNode { Token = Tokens.Error };
             }
 
-            node = GetStatementAST(node as StatementAstNode);
+            node = GetFncStatementAST(node as StatementAstNode);
             if (node.Token == Tokens.Error)
                 return node;
             fnc.Body = node as StatementAstNode;
 
             return fnc;
+        }
+
+        private static BaseAstNode GetFncStatementAST(StatementAstNode st)
+        {
+            if (st == null)
+            {
+                errorMsg = "Chybne volana funkce 'GetFunctionNode(FunctionAstNode fnc)', parametr 'fnc' je null";
+                return new BaseAstNode { Token = Tokens.Error };
+            }
+
+            BaseAstNode node = new BaseAstNode { Token = Tokens.Comment };
+            while ((node.Token != Tokens.BraceRight) && (node.Token != Tokens.Error))
+            {
+                node = GetCommandAST();
+
+                switch (node.Token)
+                {
+                    case Tokens.End:
+                        errorMsg = string.Format("Konec programu, blok neni korektne ukoncen, radek {0}, sloupec {1}", node.LineStart, node.ColStart);
+                        node = new BaseAstNode { Token = Tokens.Error };
+                        break;
+
+                    case Tokens.BraceLeft:
+                        node = GetStatementAST(node as StatementAstNode);
+                        break;
+                }
+
+                if (node.Token == Tokens.Error)
+                    return node;
+
+                if (node.Token == Tokens.BraceRight)
+                    break;
+
+                st.Commands.AddRange(TransformStatement(node));
+            }
+
+            return st;
         }
 
         #endregion SA - function
@@ -625,7 +662,7 @@ namespace InterproceduralAnalysis
                         break;
 
                     case Tokens.BraceLeft:
-                        node = GetStatementAST(st); // it is inner statement -> don't care -> just continue with current list
+                        node = GetStatementAST(node as StatementAstNode);
                         break;
                 }
 
@@ -635,7 +672,7 @@ namespace InterproceduralAnalysis
                 if (node.Token == Tokens.BraceRight)
                     break;
 
-                st.Commands.AddRange(TransformStatement(node));
+                st.Commands.Add(node);
             }
 
             return st;
@@ -647,13 +684,20 @@ namespace InterproceduralAnalysis
             {
                 return (cond as OperationAstNode).Right;
             }
-            return cond;
+            return new OperationAstNode { Token = Tokens.Neg, TokenText = "!", Right = cond };
         }
 
         private static IEnumerable<BaseAstNode> TransformStatement(BaseAstNode node)
         {
             if (node is StatementAstNode)
-                return (node as StatementAstNode).Commands;
+            {
+                List<BaseAstNode> block = new List<BaseAstNode>();
+                foreach (BaseAstNode st in (node as StatementAstNode).Commands)
+                {
+                    block.AddRange(TransformStatement(st));
+                }
+                return block;                
+            }
 
             if (node is IfAstNode)
                 return TransformIf(node as IfAstNode);
@@ -681,16 +725,16 @@ namespace InterproceduralAnalysis
             block.Add(cond);
 
             if (node.ElseBody != null)
-                block.Add(new GotoAstNode { Token = Tokens.GotoCmd, Label = new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$IfElse{0}", internalLabelIdx) } });
+                block.Add(new GotoAstNode { Token = Tokens.GotoCmd, TokenText = "goto", Label = new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$IfElse{0}", internalLabelIdx) } });
             else
-                block.Add(new GotoAstNode { Token = Tokens.GotoCmd, Label = new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$IfEnd{0}", internalLabelIdx) } });
+                block.Add(new GotoAstNode { Token = Tokens.GotoCmd, TokenText = "goto", Label = new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$IfEnd{0}", internalLabelIdx) } });
 
             block.Add(new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$IfTrue{0}", internalLabelIdx) });
             block.AddRange(TransformStatement(node.IfBody));
 
             if (node.ElseBody != null)
             {
-                block.Add(new GotoAstNode { Token = Tokens.GotoCmd, Label = new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$IfEnd{0}", internalLabelIdx) } });
+                block.Add(new GotoAstNode { Token = Tokens.GotoCmd, TokenText = "goto", Label = new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$IfEnd{0}", internalLabelIdx) } });
 
                 // this label is not needed, but for better orientation in final code
                 block.Add(new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$IfFalse{0}", internalLabelIdx) });
@@ -715,11 +759,11 @@ namespace InterproceduralAnalysis
             cond.Condition = NegateCondition(node.Condition);
             block.Add(cond);
 
-            block.Add(new GotoAstNode { Token = Tokens.GotoCmd, Label = new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$WhileEnd{0}", internalLabelIdx) } });
+            block.Add(new GotoAstNode { Token = Tokens.GotoCmd, TokenText = "goto", Label = new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$WhileEnd{0}", internalLabelIdx) } });
 
             block.Add(new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$WhileTrue{0}", internalLabelIdx) });
             block.AddRange(TransformStatement(node.WhileBody));
-            block.Add(new GotoAstNode { Token = Tokens.GotoCmd, Label = new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$WhileBegin{0}", internalLabelIdx) } });
+            block.Add(new GotoAstNode { Token = Tokens.GotoCmd, TokenText = "goto", Label = new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$WhileBegin{0}", internalLabelIdx) } });
 
             block.Add(new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$WhileEnd{0}", internalLabelIdx) });
 
@@ -743,12 +787,12 @@ namespace InterproceduralAnalysis
             cond.Condition = NegateCondition(node.Condition);
             block.Add(cond);
 
-            block.Add(new GotoAstNode { Token = Tokens.GotoCmd, Label = new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$ForEnd{0}", internalLabelIdx) } });
+            block.Add(new GotoAstNode { Token = Tokens.GotoCmd, TokenText = "goto", Label = new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$ForEnd{0}", internalLabelIdx) } });
 
             block.Add(new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$ForTrue{0}", internalLabelIdx) });
             block.AddRange(TransformStatement(node.ForBody));
             block.AddRange(TransformStatement(node.Close));
-            block.Add(new GotoAstNode { Token = Tokens.GotoCmd, Label = new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$ForCondition{0}", internalLabelIdx) } });
+            block.Add(new GotoAstNode { Token = Tokens.GotoCmd, TokenText = "goto", Label = new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$ForCondition{0}", internalLabelIdx) } });
 
             block.Add(new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$ForEnd{0}", internalLabelIdx) });
 
@@ -1702,7 +1746,7 @@ namespace InterproceduralAnalysis
 
         private static void SeA()
         {
-            
+
         }
 
         #endregion Semanticka analyza
@@ -1750,7 +1794,7 @@ namespace InterproceduralAnalysis
                     Console.WriteLine("    {0};", PrintSAExpr(oper));
                     break;
 
-                default: 
+                default:
                     Console.WriteLine("Toto neni znamy vyraz");
                     break;
             }
@@ -1830,7 +1874,7 @@ namespace InterproceduralAnalysis
             {
                 PrintSAVarDecl(var);
             }
-            foreach(string fnc in fncs.Keys)
+            foreach (string fnc in fncs.Keys)
             {
                 Console.WriteLine();
                 PrintSAFncDecl(fnc);
