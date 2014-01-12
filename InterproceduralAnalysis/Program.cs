@@ -716,32 +716,33 @@ namespace InterproceduralAnalysis
             List<BaseAstNode> block = new List<BaseAstNode>();
 
             internalLabelIdx++;
+            int idx = internalLabelIdx;
 
             // this label is not needed, but for better orientation in final code
-            block.Add(new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$IfBegin{0}", internalLabelIdx) });
+            block.Add(new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$IfBegin{0}", idx) });
 
             ConditionAstNode cond = ConvertToCondition(node);
             cond.Condition = NegateCondition(node.Condition);
             block.Add(cond);
 
             if (node.ElseBody != null)
-                block.Add(new GotoAstNode { Token = Tokens.GotoCmd, TokenText = "goto", Label = new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$IfElse{0}", internalLabelIdx) } });
+                block.Add(new GotoAstNode { Token = Tokens.GotoCmd, TokenText = "goto", Label = new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$IfElse{0}", idx) } });
             else
-                block.Add(new GotoAstNode { Token = Tokens.GotoCmd, TokenText = "goto", Label = new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$IfEnd{0}", internalLabelIdx) } });
+                block.Add(new GotoAstNode { Token = Tokens.GotoCmd, TokenText = "goto", Label = new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$IfEnd{0}", idx) } });
 
-            block.Add(new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$IfTrue{0}", internalLabelIdx) });
+            block.Add(new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$IfTrue{0}", idx) });
             block.AddRange(TransformStatement(node.IfBody));
 
             if (node.ElseBody != null)
             {
-                block.Add(new GotoAstNode { Token = Tokens.GotoCmd, TokenText = "goto", Label = new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$IfEnd{0}", internalLabelIdx) } });
+                block.Add(new GotoAstNode { Token = Tokens.GotoCmd, TokenText = "goto", Label = new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$IfEnd{0}", idx) } });
 
                 // this label is not needed, but for better orientation in final code
-                block.Add(new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$IfFalse{0}", internalLabelIdx) });
+                block.Add(new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$IfFalse{0}", idx) });
                 block.AddRange(TransformStatement(node.ElseBody));
             }
 
-            block.Add(new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$IfEnd{0}", internalLabelIdx) });
+            block.Add(new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$IfEnd{0}", idx) });
 
             return block;
         }
@@ -751,21 +752,22 @@ namespace InterproceduralAnalysis
             List<BaseAstNode> block = new List<BaseAstNode>();
 
             internalLabelIdx++;
+            int idx = internalLabelIdx;
 
             // this label is not needed, but for better orientation in final code
-            block.Add(new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$WhileBegin{0}", internalLabelIdx) });
+            block.Add(new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$WhileBegin{0}", idx) });
 
             ConditionAstNode cond = ConvertToCondition(node);
             cond.Condition = NegateCondition(node.Condition);
             block.Add(cond);
 
-            block.Add(new GotoAstNode { Token = Tokens.GotoCmd, TokenText = "goto", Label = new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$WhileEnd{0}", internalLabelIdx) } });
+            block.Add(new GotoAstNode { Token = Tokens.GotoCmd, TokenText = "goto", Label = new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$WhileEnd{0}", idx) } });
 
-            block.Add(new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$WhileTrue{0}", internalLabelIdx) });
+            block.Add(new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$WhileTrue{0}", idx) });
             block.AddRange(TransformStatement(node.WhileBody));
-            block.Add(new GotoAstNode { Token = Tokens.GotoCmd, TokenText = "goto", Label = new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$WhileBegin{0}", internalLabelIdx) } });
+            block.Add(new GotoAstNode { Token = Tokens.GotoCmd, TokenText = "goto", Label = new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$WhileBegin{0}", idx) } });
 
-            block.Add(new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$WhileEnd{0}", internalLabelIdx) });
+            block.Add(new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$WhileEnd{0}", idx) });
 
             return block;
         }
@@ -775,26 +777,27 @@ namespace InterproceduralAnalysis
             List<BaseAstNode> block = new List<BaseAstNode>();
 
             internalLabelIdx++;
+            int idx = internalLabelIdx;
 
             // this label is not needed, but for better orientation in final code
-            block.Add(new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$ForBegin{0}", internalLabelIdx) });
+            block.Add(new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$ForBegin{0}", idx) });
 
             block.AddRange(TransformStatement(node.Init));
 
-            block.Add(new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$ForCondition{0}", internalLabelIdx) });
+            block.Add(new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$ForCondition{0}", idx) });
 
             ConditionAstNode cond = ConvertToCondition(node);
             cond.Condition = NegateCondition(node.Condition);
             block.Add(cond);
 
-            block.Add(new GotoAstNode { Token = Tokens.GotoCmd, TokenText = "goto", Label = new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$ForEnd{0}", internalLabelIdx) } });
+            block.Add(new GotoAstNode { Token = Tokens.GotoCmd, TokenText = "goto", Label = new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$ForEnd{0}", idx) } });
 
-            block.Add(new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$ForTrue{0}", internalLabelIdx) });
+            block.Add(new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$ForTrue{0}", idx) });
             block.AddRange(TransformStatement(node.ForBody));
             block.AddRange(TransformStatement(node.Close));
-            block.Add(new GotoAstNode { Token = Tokens.GotoCmd, TokenText = "goto", Label = new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$ForCondition{0}", internalLabelIdx) } });
+            block.Add(new GotoAstNode { Token = Tokens.GotoCmd, TokenText = "goto", Label = new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$ForCondition{0}", idx) } });
 
-            block.Add(new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$ForEnd{0}", internalLabelIdx) });
+            block.Add(new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$ForEnd{0}", idx) });
 
             return block;
         }
