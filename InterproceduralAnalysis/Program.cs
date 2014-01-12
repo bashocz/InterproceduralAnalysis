@@ -13,6 +13,7 @@ namespace InterproceduralAnalysis
     {
         private static string programFile;
         private static bool printLA;
+        private static bool printSA;
 
         private static string errorMsg;
 
@@ -314,6 +315,8 @@ namespace InterproceduralAnalysis
 
         private static int opMax;
 
+        private static int internalLabelIdx = 0;
+
         private static void InitSA()
         {
             vars = new Dictionary<string, BaseAstNode>();
@@ -366,6 +369,19 @@ namespace InterproceduralAnalysis
         private static LabelAstNode ConvertToLabel(BaseAstNode node)
         {
             return new LabelAstNode
+            {
+                Token = node.Token,
+                TokenText = node.TokenText,
+                LineStart = node.LineStart,
+                ColStart = node.ColStart,
+                LineEnd = node.LineEnd,
+                ColEnd = node.ColEnd,
+            };
+        }
+
+        private static ConditionAstNode ConvertToCondition(BaseAstNode node)
+        {
+            return new ConditionAstNode
             {
                 Token = node.Token,
                 TokenText = node.TokenText,
@@ -619,10 +635,124 @@ namespace InterproceduralAnalysis
                 if (node.Token == Tokens.BraceRight)
                     break;
 
-                st.Commands.Add(node);
+                st.Commands.AddRange(TransformStatement(node));
             }
 
             return st;
+        }
+
+        private static BaseAstNode NegateCondition(BaseAstNode cond)
+        {
+            if ((cond is OperationAstNode) && ((cond as OperationAstNode).Token == Tokens.Neg))
+            {
+                return (cond as OperationAstNode).Right;
+            }
+            return cond;
+        }
+
+        private static IEnumerable<BaseAstNode> TransformStatement(BaseAstNode node)
+        {
+            if (node is StatementAstNode)
+                return (node as StatementAstNode).Commands;
+
+            if (node is IfAstNode)
+                return TransformIf(node as IfAstNode);
+
+            if (node is WhileAstNode)
+                return TransformWhile(node as WhileAstNode);
+
+            if (node is ForAstNode)
+                return TransformFor(node as ForAstNode);
+
+            return new List<BaseAstNode>() { node };
+        }
+
+        private static IEnumerable<BaseAstNode> TransformIf(IfAstNode node)
+        {
+            List<BaseAstNode> block = new List<BaseAstNode>();
+
+            internalLabelIdx++;
+
+            // this label is not needed, but for better orientation in final code
+            block.Add(new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$IfBegin{0}", internalLabelIdx) });
+
+            ConditionAstNode cond = ConvertToCondition(node);
+            cond.Condition = NegateCondition(node.Condition);
+            block.Add(cond);
+
+            if (node.ElseBody != null)
+                block.Add(new GotoAstNode { Token = Tokens.GotoCmd, Label = new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$IfElse{0}", internalLabelIdx) } });
+            else
+                block.Add(new GotoAstNode { Token = Tokens.GotoCmd, Label = new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$IfEnd{0}", internalLabelIdx) } });
+
+            block.Add(new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$IfTrue{0}", internalLabelIdx) });
+            block.AddRange(TransformStatement(node.IfBody));
+
+            if (node.ElseBody != null)
+            {
+                block.Add(new GotoAstNode { Token = Tokens.GotoCmd, Label = new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$IfEnd{0}", internalLabelIdx) } });
+
+                // this label is not needed, but for better orientation in final code
+                block.Add(new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$IfFalse{0}", internalLabelIdx) });
+                block.AddRange(TransformStatement(node.ElseBody));
+            }
+
+            block.Add(new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$IfEnd{0}", internalLabelIdx) });
+
+            return block;
+        }
+
+        private static IEnumerable<BaseAstNode> TransformWhile(WhileAstNode node)
+        {
+            List<BaseAstNode> block = new List<BaseAstNode>();
+
+            internalLabelIdx++;
+
+            // this label is not needed, but for better orientation in final code
+            block.Add(new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$WhileBegin{0}", internalLabelIdx) });
+
+            ConditionAstNode cond = ConvertToCondition(node);
+            cond.Condition = NegateCondition(node.Condition);
+            block.Add(cond);
+
+            block.Add(new GotoAstNode { Token = Tokens.GotoCmd, Label = new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$WhileEnd{0}", internalLabelIdx) } });
+
+            block.Add(new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$WhileTrue{0}", internalLabelIdx) });
+            block.AddRange(TransformStatement(node.WhileBody));
+            block.Add(new GotoAstNode { Token = Tokens.GotoCmd, Label = new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$WhileBegin{0}", internalLabelIdx) } });
+
+            block.Add(new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$WhileEnd{0}", internalLabelIdx) });
+
+            return block;
+        }
+
+        private static IEnumerable<BaseAstNode> TransformFor(ForAstNode node)
+        {
+            List<BaseAstNode> block = new List<BaseAstNode>();
+
+            internalLabelIdx++;
+
+            // this label is not needed, but for better orientation in final code
+            block.Add(new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$ForBegin{0}", internalLabelIdx) });
+
+            block.AddRange(TransformStatement(node.Init));
+
+            block.Add(new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$ForCondition{0}", internalLabelIdx) });
+
+            ConditionAstNode cond = ConvertToCondition(node);
+            cond.Condition = NegateCondition(node.Condition);
+            block.Add(cond);
+
+            block.Add(new GotoAstNode { Token = Tokens.GotoCmd, Label = new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$ForEnd{0}", internalLabelIdx) } });
+
+            block.Add(new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$ForTrue{0}", internalLabelIdx) });
+            block.AddRange(TransformStatement(node.ForBody));
+            block.AddRange(TransformStatement(node.Close));
+            block.Add(new GotoAstNode { Token = Tokens.GotoCmd, Label = new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$ForCondition{0}", internalLabelIdx) } });
+
+            block.Add(new LabelAstNode { Token = Tokens.Identifier, TokenText = string.Format("$ForEnd{0}", internalLabelIdx) });
+
+            return block;
         }
 
         #endregion SA - statement
@@ -1136,7 +1266,7 @@ namespace InterproceduralAnalysis
             {
                 try
                 {
-                    Convert.ToInt32(str.Substring(2), 16);
+                    number = Convert.ToInt32(str.Substring(2), 16);
                 }
                 catch
                 {
@@ -1373,8 +1503,8 @@ namespace InterproceduralAnalysis
 
                     case Tokens.ParenthesisLeft:
                         BaseAstNode nodePR = GetSubExprAST(out node, level + 1, isCond);
-                            if (nodePR.Token == Tokens.Error)
-                                return nodePR;
+                        if (nodePR.Token == Tokens.Error)
+                            return nodePR;
                         if (nodePR.Token != Tokens.ParenthesisRight)
                         {
                             errorMsg = string.Format("Vyraz neni korektne ukoncen pravou zavorkou, radek {0}, sloupec {1}", nodePR.LineStart, nodePR.ColStart);
@@ -1568,12 +1698,154 @@ namespace InterproceduralAnalysis
 
         #endregion Syntakticka analyza
 
+        #region Semanticka analyza
+
+        private static void SeA()
+        {
+            
+        }
+
+        #endregion Semanticka analyza
+
+        #region Print SyA
+
+        private static string PrintSAExpr(BaseAstNode node)
+        {
+            if (node is VariableAstNode)
+                return node.TokenText;
+            if (node is NumberAstNode)
+                return (node as NumberAstNode).Number.ToString();
+            if (node is OperationAstNode)
+            {
+                OperationAstNode oper = node as OperationAstNode;
+                switch (oper.Token)
+                {
+                    case Tokens.PlusPlus:
+                    case Tokens.MinusMinus:
+                        if (oper.Right != null)
+                            return string.Format("{0}{1}", oper.TokenText, PrintSAExpr(oper.Right));
+                        return string.Format("{0}{1}", PrintSAExpr(oper.Left), oper.TokenText);
+
+                    case Tokens.Neg:
+                        return string.Format("{0}({1})", oper.TokenText, PrintSAExpr(oper.Right));
+
+                    default:
+                        return string.Format("({0} {1} {2})", PrintSAExpr(oper.Left), oper.TokenText, PrintSAExpr(oper.Right));
+                }
+            }
+
+            return "...";
+        }
+
+        private static void PrintSAOper(OperationAstNode oper)
+        {
+            switch (oper.Token)
+            {
+                case Tokens.Equals:
+                    Console.WriteLine("    {0} = {1};", oper.Left.TokenText, PrintSAExpr(oper.Right));
+                    break;
+
+                case Tokens.PlusPlus:
+                case Tokens.MinusMinus:
+                    Console.WriteLine("    {0};", PrintSAExpr(oper));
+                    break;
+
+                default: 
+                    Console.WriteLine("Toto neni znamy vyraz");
+                    break;
+            }
+        }
+
+        private static void PrintSACond(ConditionAstNode cond)
+        {
+            Console.WriteLine("    if ({0})", PrintSAExpr(cond.Condition));
+        }
+
+        private static void PrintSALabel(LabelAstNode label)
+        {
+            Console.WriteLine("{0}:", label.TokenText);
+        }
+
+        private static void PrintSAGoto(GotoAstNode gotoc)
+        {
+            Console.WriteLine("    goto {0};", gotoc.Label.TokenText);
+        }
+
+        private static void PrintSAFncDecl(FunctionCallAstNode fnc)
+        {
+            Console.WriteLine("    {0}();", fnc.TokenText);
+        }
+
+        private static void PrintSAReturn(ReturnAstNode ret)
+        {
+            Console.WriteLine("    return;");
+        }
+
+        private static void PrintSAVarDecl(string varName)
+        {
+            BaseAstNode var = vars[varName] as BaseAstNode;
+            if (var != null)
+                Console.WriteLine("var {0} = {1};", varName, PrintSAExpr(var));
+            else
+                Console.WriteLine("var {0};", varName);
+        }
+
+        private static void PrintSAFncDecl(string fncName)
+        {
+            FunctionAstNode fnc = fncs[fncName] as FunctionAstNode;
+            if (fnc != null)
+            {
+                Console.WriteLine("function {0}()", fnc.Name.TokenText);
+                Console.WriteLine("{");
+
+                foreach (BaseAstNode st in fnc.Body.Commands)
+                {
+                    if (st is OperationAstNode)
+                        PrintSAOper(st as OperationAstNode);
+                    else if (st is ConditionAstNode)
+                        PrintSACond(st as ConditionAstNode);
+                    else if (st is LabelAstNode)
+                        PrintSALabel(st as LabelAstNode);
+                    else if (st is GotoAstNode)
+                        PrintSAGoto(st as GotoAstNode);
+                    else if (st is FunctionCallAstNode)
+                        PrintSAFncDecl(st as FunctionCallAstNode);
+                    else if (st is ReturnAstNode)
+                        PrintSAReturn(st as ReturnAstNode);
+                    else
+                    {
+                        Console.WriteLine("Neco neni v poradku :-)...");
+                        break;
+                    }
+                }
+
+                Console.WriteLine("}");
+            }
+        }
+
+        private static void PrintSA()
+        {
+            Console.WriteLine();
+            foreach (string var in vars.Keys)
+            {
+                PrintSAVarDecl(var);
+            }
+            foreach(string fnc in fncs.Keys)
+            {
+                Console.WriteLine();
+                PrintSAFncDecl(fnc);
+            }
+        }
+
+        #endregion Print SyA
+
         static int Main(string[] args)
         {
             //programName = args[0];
             programFile = @"D:\projects\github\InterproceduralAnalysis\InterproceduralAnalysis\program.txt";
             //printLA = arg[1];
             printLA = true;
+            printSA = true;
 
             if (programFile == null)
             {
@@ -1592,6 +1864,11 @@ namespace InterproceduralAnalysis
             }
 
             SA();
+
+            SeA();
+
+            if (printSA)
+                PrintSA();
 
             Console.ReadKey();
             return 0;

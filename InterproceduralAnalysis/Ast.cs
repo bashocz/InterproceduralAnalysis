@@ -82,6 +82,11 @@ namespace InterproceduralAnalysis
         public StatementAstNode Body { get; set; }
     }
 
+    class ConditionAstNode : BaseAstNode
+    {
+        public BaseAstNode Condition { get; set; }
+    }
+
     class IfAstNode : BaseAstNode
     {
         // just for graph construct purpose

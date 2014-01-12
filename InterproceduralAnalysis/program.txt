@@ -43,12 +43,16 @@ else {
 	w = 3 * (5 + 1 * --x - 6 * (--z + 2) + 4 * ++w);
 }
 
-x = 0x14abcdef;
-y = -5;
-z = 105;
-w = 101;
-a = x + 3*y - 2*z;
-b = 6 * (x - y - z);
+{
+	x = 0x14abcdef;
+	y = -5;
+	{
+		z = 105;
+		w = 101;
+	}
+	a = x + 3*y - 2*z;
+	b = 6 * (x - y - z);
+}
 vysledek = 20- 5;      // toto bude chyba, neznamy indetifikator ale to jeste neumime :-)
 
 /* c =*/ count();           // volani funkce v expression jeste neumime :-)
