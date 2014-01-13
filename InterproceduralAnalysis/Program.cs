@@ -696,7 +696,7 @@ namespace InterproceduralAnalysis
                 {
                     block.AddRange(TransformStatement(st));
                 }
-                return block;                
+                return block;
             }
 
             if (node is IfAstNode)
@@ -1756,9 +1756,9 @@ namespace InterproceduralAnalysis
 
         #region Semanticka analyza
 
-        private static void SeA()
+        private static bool SeA()
         {
-
+            return true;
         }
 
         #endregion Semanticka analyza
@@ -1895,10 +1895,103 @@ namespace InterproceduralAnalysis
 
         #endregion Print SyA
 
+        #region Graf
+
+        private static Dictionary<string, IaNode> gf;
+
+        private static bool CG()
+        {
+            gf = new Dictionary<string, IaNode>();
+
+            foreach (string fncName in fncs.Keys)
+            {
+                FunctionAstNode fnc = fncs[fncName] as FunctionAstNode;
+                if (fnc != null)
+                {
+                    if ((fnc.Body != null) && (fnc.Body.Commands != null) && (fnc.Body.Commands.Count > 0))
+                    {
+                        bool isAnyCmd = false;
+                        foreach (BaseAstNode st in fnc.Body.Commands)
+                            if ((st is OperationAstNode) || (st is ConditionAstNode) || (st is FunctionCallAstNode) || (st is ReturnAstNode))
+                            {
+                                isAnyCmd = true;
+                                break;
+                            }
+                        if (isAnyCmd)
+                        {
+                            Dictionary<string, IaNode> lbls = new Dictionary<string, IaNode>();
+                            List<Tuple<string, IaNode, string>> gts = new List<Tuple<string, IaNode, string>>();
+
+                            IaNode node = new IaNode();
+                            gf.Add(fncName, node);
+                            int i = 0;
+                            while (i < fnc.Body.Commands.Count)
+                            {
+                                BaseAstNode st = fnc.Body.Commands[i];
+                                if ((st is OperationAstNode) || (st is FunctionCallAstNode))
+                                {
+                                    IaNode next = new IaNode();
+                                    node.Next = new IaEdge { Ast = st, From = node, To = next };
+                                    node = next;
+                                    i++;
+                                    continue;
+                                }
+                                if (st is ConditionAstNode)
+                                {
+                                    BaseAstNode gt = fnc.Body.Commands[i + 1];
+                                    gts.Add(new Tuple<string, IaNode, string>("IsTrue", node, (gt as GotoAstNode).Label.TokenText));
+                                    IaNode next = new IaNode();
+                                    node.IsFalse = new IaEdge { From = node, To = next };
+                                    node = next;
+                                    i += 2; // preskoc goto za if :-)
+                                    continue;
+                                }
+                                if (st is LabelAstNode)
+                                {
+                                    lbls.Add(st.TokenText, node);
+                                    i++;
+                                    continue;
+                                }
+                                if (st is GotoAstNode)
+                                {
+                                    gts.Add(new Tuple<string, IaNode, string>("Next", node, (st as GotoAstNode).Label.TokenText));
+                                    i++;
+                                    continue;
+                                }
+                                if (st is ReturnAstNode)
+                                {
+                                    node = new IaNode(); // aktualni node je konec funkce, novy node pro pokracovani, jinak se zahodi
+                                    i++;
+                                    continue;
+                                }
+                            }
+
+                            foreach (Tuple<string, IaNode, string> gt in gts)
+                            {
+                                IaNode to = lbls[gt.Item3];
+                                if (to == null)
+                                {
+                                    Console.WriteLine("Neznamy label {0} pri vytvareni grafu.", gt.Item3);
+                                    return false;
+                                }
+                                if (gt.Item1 == "Next")
+                                    gt.Item2.Next = new IaEdge { From = gt.Item2, To = to };
+                                else if (gt.Item1 == "IsTrue")
+                                    gt.Item2.IsTrue = new IaEdge { From = gt.Item2, To = to };
+                            }
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+
+        #endregion Graf
+
         static int Main(string[] args)
         {
             //programName = args[0];
-            programFile = @"C:\Users\Míša\Documents\Visual Studio 2010\Projects\InterproceduralAnalysis\InterproceduralAnalysis\program.txt";
+            programFile = @"D:\Projects\github\InterproceduralAnalysis\InterproceduralAnalysis\program.txt";
             //printLA = arg[1];
             printLA = true;
             printSA = true;
@@ -1925,10 +2018,20 @@ namespace InterproceduralAnalysis
                 return -1;
             }
 
-            SeA();
+            if (!SeA())
+            {
+                Console.ReadKey();
+                return -1;
+            }
 
             if (printSA)
                 PrintSA();
+
+            if (!CG())
+            {
+                Console.ReadKey();
+                return -1;
+            }
 
             Console.ReadKey();
             return 0;
