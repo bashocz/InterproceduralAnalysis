@@ -1938,12 +1938,17 @@ namespace InterproceduralAnalysis
                                 }
                                 if (st is ConditionAstNode)
                                 {
-                                    BaseAstNode gt = fnc.Body.Commands[i + 1];
-                                    gts.Add(new Tuple<string, IaNode, string>("IsTrue", node, (gt as GotoAstNode).Label.TokenText));
                                     IaNode next = new IaNode();
+                                    node.Next = new IaEdge { Ast = st, From = node, To = next };
+                                    node = next;
+                                    i++;
+
+                                    BaseAstNode gt = fnc.Body.Commands[i];
+                                    gts.Add(new Tuple<string, IaNode, string>("IsTrue", node, (gt as GotoAstNode).Label.TokenText));
+                                    next = new IaNode();
                                     node.IsFalse = new IaEdge { From = node, To = next };
                                     node = next;
-                                    i += 2; // preskoc goto za if :-)
+                                    i++;
                                     continue;
                                 }
                                 if (st is LabelAstNode)
@@ -1955,6 +1960,7 @@ namespace InterproceduralAnalysis
                                 if (st is GotoAstNode)
                                 {
                                     gts.Add(new Tuple<string, IaNode, string>("Next", node, (st as GotoAstNode).Label.TokenText));
+                                    node = new IaNode(); // po goto musi byt novy node (nova vetev)
                                     i++;
                                     continue;
                                 }
