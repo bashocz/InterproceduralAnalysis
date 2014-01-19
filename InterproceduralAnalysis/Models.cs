@@ -11,6 +11,38 @@ namespace InterproceduralAnalysis
         public string ErrorMessage { get; set; }
     }
 
+    class ProgramAst : BaseAst
+    {
+        public ProgramAst()
+        {
+            AstType = AstNodeTypes.Program;
+        }
+
+        private Dictionary<string, BaseAst> vars;
+        public Dictionary<string, BaseAst> VarsDecl
+        {
+            get { return vars ?? (vars = new Dictionary<string, BaseAst>()); }
+        }
+
+        private Dictionary<string, FunctionAst> origFncs;
+        public Dictionary<string, FunctionAst> OrigFncs
+        {
+            get { return origFncs ?? (origFncs = new Dictionary<string, FunctionAst>()); }
+        }
+
+        private Dictionary<string, FunctionAst> convFncs;
+        public Dictionary<string, FunctionAst> ConvFncs
+        {
+            get { return convFncs ?? (convFncs = new Dictionary<string, FunctionAst>()); }
+        }
+
+        private Dictionary<string, IaNode> graph;
+        public Dictionary<string, IaNode> Graph
+        {
+            get { return graph ?? (graph = new Dictionary<string, IaNode>()); }
+        }
+    }
+
     // modely lexikalni analyzy
 
     enum TokenTypes
@@ -101,32 +133,6 @@ namespace InterproceduralAnalysis
         public AstNodeTypes AstType { get; set; }
     }
 
-    class ProgramAst : BaseAst
-    {
-        public ProgramAst()
-        {
-            AstType = AstNodeTypes.Program;
-        }
-
-        private Dictionary<string, BaseAst> vars;
-        public Dictionary<string, BaseAst> VarsDecl
-        {
-            get { return vars ?? (vars = new Dictionary<string, BaseAst>()); }
-        }
-
-        private Dictionary<string, FunctionAst> origFncs;
-        public Dictionary<string, FunctionAst> OrigFncs
-        {
-            get { return origFncs ?? (origFncs = new Dictionary<string, FunctionAst>()); }
-        }
-
-        private Dictionary<string, FunctionAst> convFncs;
-        public Dictionary<string, FunctionAst> ConvFncs
-        {
-            get { return convFncs ?? (convFncs = new Dictionary<string, FunctionAst>()); }
-        }
-    }
-
     class BlockAst : BaseAst
     {
         private List<BaseAst> statements;
@@ -200,7 +206,7 @@ namespace InterproceduralAnalysis
 
     class IaEdge
     {
-        public BaseAstNode Ast { get; set; }
+        public BaseAst Ast { get; set; }
 
         public IaNode From { get; set; }
         public IaNode To { get; set; }
