@@ -8,9 +8,28 @@ namespace InterproceduralAnalysis
 {
     class LexicalAnalyzer
     {
-        private StreamReader file;
+        // tridni promenne pro lexikalni analyzu
+        private bool isPrint;
+        private string errorMsg;
 
-        private int line, col;
+        // tridni promenne pro praci se souborem
+        private string fileName;
+        private StreamReader file;
+        private bool eof;
+
+        // tridni promenne pro precteny znak
+        private char ch, next;
+        private int chLine, chCol;
+
+        // tridni promenne pro precteny token
+        private string tokenText;
+        int lineStart, colStart;
+
+        public LexicalAnalyzer(string fileName, bool isPrint)
+        {
+            this.fileName = fileName;
+            this.isPrint = isPrint;
+        }
 
         private Dictionary<string, TokenType> rw;
 
@@ -61,43 +80,33 @@ namespace InterproceduralAnalysis
             return IsDigit(c) || (c == 'X') || (c == 'x');
         }
 
-        private bool ReadChar(out char ch, ref string tokenText, out int lineEnd, out int colEnd)
+        private char ReadChar()
         {
-            ch = '\u0000';
-            lineEnd = colEnd = 0;
-            if (file.EndOfStream)
-                return false;
-
-            ch = Convert.ToChar(file.Read());
-            col++;
-            if (ch == '\u000a') // novy radek
+            if (eof)
             {
-                line++;
-                col = 0;
+                ch = '\u0000';
+                return ch;
             }
-            tokenText += ch;
-            lineEnd = line;
-            colEnd = col;
-            return true;
+
+            // precti znak ze souboru
+            ch = Convert.ToChar(file.Read());
+            chCol++;
+            if (ch == '\u000a') // toto je novy radek
+            {
+                chLine++;
+                chCol = 0;
+            }
+            // zjisti, co je dalsi znak
+            next = Convert.ToChar((!file.EndOfStream) ? file.Peek() : 0);
+            eof = file.EndOfStream;
+
+            return ch;
         }
 
-        private bool ReadChar(out char ch, ref string tokenText, out int lineEnd, out int colEnd, out char next)
+        private TokenType GetToken()
         {
-            next = '\u0000';
-            bool eof = ReadChar(out ch, ref tokenText, out lineEnd, out colEnd);
-            next = Convert.ToChar((!file.EndOfStream) ? file.Peek() : -1);
-            return eof;
-        }
-
-        private TokenType GetToken(out string tokenText, out int lineStart, out int colStart, out int lineEnd, out int colEnd, ref string errorMsg)
-        {
-            lineStart = line;
-            colStart = col;
             tokenText = "";
-
-            char next, ch;
-
-            bool eof = ReadChar(out ch, ref tokenText, out lineEnd, out colEnd, out next);
+            tokenText += ReadChar();
 
             switch (ch)
             {
@@ -122,14 +131,14 @@ namespace InterproceduralAnalysis
                 case '+':
                     if (next == '+')
                     {
-                        ReadChar(out ch, ref tokenText, out lineEnd, out colEnd);
+                        tokenText += ReadChar();
                         return TokenType.PlusPlus;
                     }
                     return TokenType.Plus;
                 case '-':
                     if (next == '-')
                     {
-                        ReadChar(out ch, ref tokenText, out lineEnd, out colEnd);
+                        tokenText += ReadChar();
                         return TokenType.MinusMinus;
                     }
                     return TokenType.Minus;
@@ -138,44 +147,44 @@ namespace InterproceduralAnalysis
                 case '=':
                     if (next == '=')
                     {
-                        ReadChar(out ch, ref tokenText, out lineEnd, out colEnd);
+                        tokenText += ReadChar();
                         return TokenType.EqualsEquals;
                     }
                     return TokenType.Equals;
                 case '<':
                     if (next == '=')
                     {
-                        ReadChar(out ch, ref tokenText, out lineEnd, out colEnd);
+                        tokenText += ReadChar();
                         return TokenType.LessOrEquals;
                     }
                     return TokenType.Less;
                 case '>':
                     if (next == '=')
                     {
-                        ReadChar(out ch, ref tokenText, out lineEnd, out colEnd);
+                        tokenText += ReadChar();
                         return TokenType.MoreOrEquals;
                     }
                     return TokenType.More;
                 case '|':
                     if (next == '|')
                     {
-                        ReadChar(out ch, ref tokenText, out lineEnd, out colEnd);
+                        tokenText += ReadChar();
                         return TokenType.Or;
                     }
-                    errorMsg = string.Format("Neznamy znak '{0}', radek {1}, sloupec {2}", ch, lineEnd, colEnd);
+                    errorMsg = string.Format("Neznamy znak '{0}', radek {1}, sloupec {2}", ch, chLine, chCol);
                     return TokenType.Error;
                 case '&':
                     if (next == '&')
                     {
-                        ReadChar(out ch, ref tokenText, out lineEnd, out colEnd);
+                        tokenText += ReadChar();
                         return TokenType.And;
                     }
-                    errorMsg = string.Format("Neznamy znak '{0}', radek {1}, sloupec {2}", ch, lineEnd, colEnd);
+                    errorMsg = string.Format("Neznamy znak '{0}', radek {1}, sloupec {2}", ch, chLine, chCol);
                     return TokenType.Error;
                 case '!':
                     if (next == '=')
                     {
-                        ReadChar(out ch, ref tokenText, out lineEnd, out colEnd);
+                        tokenText += ReadChar();
                         return TokenType.NotEquals;
                     }
                     return TokenType.Neg;
@@ -193,9 +202,9 @@ namespace InterproceduralAnalysis
                     if (next == '/')
                     {
                         // precist komentar do konce radku
-                        while ((ch != '\u000a') && (!eof))
+                        while ((next != '\u000a') && (next != '\u000d') && (!eof))
                         {
-                            eof = ReadChar(out ch, ref tokenText, out lineEnd, out colEnd);
+                            tokenText += ReadChar();
                         }
                         return TokenType.Comment;
                     }
@@ -204,10 +213,10 @@ namespace InterproceduralAnalysis
                         bool eoc = false;
                         while (!eoc && !eof)
                         {
-                            eof = ReadChar(out ch, ref tokenText, out lineEnd, out colEnd, out next);
+                            tokenText += ReadChar();
                             if ((ch == '*') && (next == '/'))
                             {
-                                ReadChar(out ch, ref tokenText, out lineEnd, out colEnd);
+                                tokenText += ReadChar();
                                 eoc = true;
                             }
                         }
@@ -219,7 +228,7 @@ namespace InterproceduralAnalysis
                         }
                         return TokenType.Comment;
                     }
-                    errorMsg = string.Format("Neznamy znak '{0}', radek {1}, sloupec {2}", ch, lineEnd, colEnd);
+                    errorMsg = string.Format("Neznamy znak '{0}', radek {1}, sloupec {2}", ch, chLine, chCol);
                     return TokenType.Error;
 
                 // reservovana slova, identifikatory & cisla & nezname znaky
@@ -229,7 +238,7 @@ namespace InterproceduralAnalysis
                     {
                         while (IsCharacterOrDigitChar(next))
                         {
-                            ReadChar(out ch, ref tokenText, out lineEnd, out colEnd, out next);
+                            tokenText += ReadChar();
                         }
 
                         TokenType t;
@@ -252,18 +261,18 @@ namespace InterproceduralAnalysis
                                     if (!hexa && ((next == 'x') || (next == 'X')) && (len == 1) && (tokenText[0] == '0'))
                                     {
                                         hexa = true;
-                                        ReadChar(out ch, ref tokenText, out lineEnd, out colEnd, out next);
+                                        tokenText += ReadChar();
                                         continue;
                                     }
                                     // pismeno v cisle znamena syntaktickou chybu
-                                    errorMsg = string.Format("Neznamy znak '{0}', radek {1}, sloupec {2}", next, lineEnd, colEnd + 1);
+                                    errorMsg = string.Format("Neznamy znak '{0}', radek {1}, sloupec {2}", next, chLine, chCol + 1);
                                     return TokenType.Error;
                                 }
 
                                 numEnd = true;
                             }
                             else
-                                ReadChar(out ch, ref tokenText, out lineEnd, out colEnd, out next);
+                                tokenText += ReadChar();
                         }
 
                         char last = tokenText[tokenText.Length - 1];
@@ -275,30 +284,30 @@ namespace InterproceduralAnalysis
                         return TokenType.Number;
                     }
 
-                    errorMsg = string.Format("Neznamy znak '{0}', radek {1}, sloupec {2}", ch, lineEnd, colEnd);
+                    errorMsg = string.Format("Neznamy znak '{0}', radek {1}, sloupec {2}", ch, chLine, chCol);
                     return TokenType.Error;
             }
 
         }
 
-        public List<TokenModel> GetAllTokens(string fileName, bool isPrint)
+        public List<TokenModel> GetAllTokens()
         {
-            return new List<TokenModel>(GetTokens(fileName, isPrint));
+            return new List<TokenModel>(GetTokens());
         }
 
-        public IEnumerable<TokenModel> GetTokens(string fileName, bool isPrint)
+        public IEnumerable<TokenModel> GetTokens()
         {
             file = new StreamReader(fileName);
-            line = 1;
-            col = 0;
+            chLine = 1;
+            chCol = 0;
 
-            string tokenText, errorMsg = "";
-            int lineStart, colStart, lineEnd, colEnd;
             TokenType token;
 
-            while (!file.EndOfStream)
+            while (!eof)
             {
-                token = GetToken(out tokenText, out lineStart, out colStart, out lineEnd, out colEnd, ref errorMsg);
+                lineStart = chLine;
+                colStart = chCol;
+                token = GetToken();
 
                 if (!string.IsNullOrEmpty(errorMsg))
                 {
@@ -321,6 +330,7 @@ namespace InterproceduralAnalysis
             file.Close();
             file.Dispose();
 
+            Console.WriteLine("End: file is closed");
             yield return new TokenModel { Token = TokenType.End };
         }
     }

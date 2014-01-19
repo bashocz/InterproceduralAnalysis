@@ -2018,6 +2018,12 @@ namespace InterproceduralAnalysis
                 return -1;
             }
 
+            LexicalAnalyzer sa = new LexicalAnalyzer(programFile, printLA);
+            var ts = sa.GetAllTokens();
+            Console.WriteLine("Pocet tokenu: {0}", ts.Count);
+            Console.ReadKey();
+            return 0;
+
             if (!SA())
             {
                 Console.ReadKey();
