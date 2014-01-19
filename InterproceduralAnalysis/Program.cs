@@ -2018,9 +2018,18 @@ namespace InterproceduralAnalysis
                 return -1;
             }
 
-            LexicalAnalyzer sa = new LexicalAnalyzer(programFile, printLA);
-            var ts = sa.GetAllTokens();
+            LexicalAnalyzer la = new LexicalAnalyzer(programFile, printLA);
+            var ts = la.GetAllTokens();
             Console.WriteLine("Pocet tokenu: {0}", ts.Count);
+
+            SyntacticAnalyzer sa = new SyntacticAnalyzer();
+            ProgramAst p;
+            if (sa.GetAST(ts, out p))
+                Console.WriteLine("Pocet promennych: {0}, pocet funkci: {1}", p.VarsDecl.Count, p.OrigFncs.Count);
+
+            StatementConverter sc = new StatementConverter(printSA);
+            sc.ConvertToIfGoto(p);
+
             Console.ReadKey();
             return 0;
 

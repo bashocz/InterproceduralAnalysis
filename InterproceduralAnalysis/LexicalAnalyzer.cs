@@ -23,7 +23,7 @@ namespace InterproceduralAnalysis
 
         // tridni promenne pro precteny token
         private string tokenText;
-        int lineStart, colStart;
+        int tokenStartLine, tokenStartCol;
 
         public LexicalAnalyzer(string fileName, bool isPrint)
         {
@@ -31,26 +31,26 @@ namespace InterproceduralAnalysis
             this.isPrint = isPrint;
         }
 
-        private Dictionary<string, TokenType> rw;
+        private Dictionary<string, TokenTypes> rw;
 
-        private Dictionary<string, TokenType> RW
+        private Dictionary<string, TokenTypes> RW
         {
             get { return rw ?? (rw = CreateRW()); }
         }
 
-        private Dictionary<string, TokenType> CreateRW()
+        private Dictionary<string, TokenTypes> CreateRW()
         {
-            Dictionary<string, TokenType> d = new Dictionary<string, TokenType>();
+            Dictionary<string, TokenTypes> d = new Dictionary<string, TokenTypes>();
 
             // reservovana slova
-            d.Add("var", TokenType.VarRW);
-            d.Add("function", TokenType.FunctionRW);
-            d.Add("if", TokenType.IfRW);
-            d.Add("else", TokenType.ElseRW);
-            d.Add("for", TokenType.ForRW);
-            d.Add("while", TokenType.WhileRW);
-            d.Add("goto", TokenType.GotoRW);
-            d.Add("return", TokenType.ReturnRW);
+            d.Add("var", TokenTypes.VarRW);
+            d.Add("function", TokenTypes.FunctionRW);
+            d.Add("if", TokenTypes.IfRW);
+            d.Add("else", TokenTypes.ElseRW);
+            d.Add("for", TokenTypes.ForRW);
+            d.Add("while", TokenTypes.WhileRW);
+            d.Add("goto", TokenTypes.GotoRW);
+            d.Add("return", TokenTypes.ReturnRW);
 
             return d;
         }
@@ -103,7 +103,7 @@ namespace InterproceduralAnalysis
             return ch;
         }
 
-        private TokenType GetToken()
+        private TokenTypes GetToken()
         {
             tokenText = "";
             tokenText += ReadChar();
@@ -115,87 +115,87 @@ namespace InterproceduralAnalysis
                 case '\u000a': // LF
                 case '\u000d': // CR
                 case ' ': // space
-                    return TokenType.Whitespace;
+                    return TokenTypes.Whitespace;
 
                 // zavorky
                 case '(':
-                    return TokenType.ParenthesisLeft;
+                    return TokenTypes.ParenthesisLeft;
                 case ')':
-                    return TokenType.ParenthesisRight;
+                    return TokenTypes.ParenthesisRight;
                 case '{':
-                    return TokenType.BraceLeft;
+                    return TokenTypes.BraceLeft;
                 case '}':
-                    return TokenType.BraceRight;
+                    return TokenTypes.BraceRight;
 
                 // operatory
                 case '+':
                     if (next == '+')
                     {
                         tokenText += ReadChar();
-                        return TokenType.PlusPlus;
+                        return TokenTypes.PlusPlus;
                     }
-                    return TokenType.Plus;
+                    return TokenTypes.Plus;
                 case '-':
                     if (next == '-')
                     {
                         tokenText += ReadChar();
-                        return TokenType.MinusMinus;
+                        return TokenTypes.MinusMinus;
                     }
-                    return TokenType.Minus;
+                    return TokenTypes.Minus;
                 case '*':
-                    return TokenType.Multi;
+                    return TokenTypes.Multi;
                 case '=':
                     if (next == '=')
                     {
                         tokenText += ReadChar();
-                        return TokenType.EqualsEquals;
+                        return TokenTypes.EqualsEquals;
                     }
-                    return TokenType.Equals;
+                    return TokenTypes.Equals;
                 case '<':
                     if (next == '=')
                     {
                         tokenText += ReadChar();
-                        return TokenType.LessOrEquals;
+                        return TokenTypes.LessOrEquals;
                     }
-                    return TokenType.Less;
+                    return TokenTypes.Less;
                 case '>':
                     if (next == '=')
                     {
                         tokenText += ReadChar();
-                        return TokenType.MoreOrEquals;
+                        return TokenTypes.MoreOrEquals;
                     }
-                    return TokenType.More;
+                    return TokenTypes.More;
                 case '|':
                     if (next == '|')
                     {
                         tokenText += ReadChar();
-                        return TokenType.Or;
+                        return TokenTypes.Or;
                     }
                     errorMsg = string.Format("Neznamy znak '{0}', radek {1}, sloupec {2}", ch, chLine, chCol);
-                    return TokenType.Error;
+                    return TokenTypes.Error;
                 case '&':
                     if (next == '&')
                     {
                         tokenText += ReadChar();
-                        return TokenType.And;
+                        return TokenTypes.And;
                     }
                     errorMsg = string.Format("Neznamy znak '{0}', radek {1}, sloupec {2}", ch, chLine, chCol);
-                    return TokenType.Error;
+                    return TokenTypes.Error;
                 case '!':
                     if (next == '=')
                     {
                         tokenText += ReadChar();
-                        return TokenType.NotEquals;
+                        return TokenTypes.NotEquals;
                     }
-                    return TokenType.Neg;
+                    return TokenTypes.Neg;
 
                 // oddelovace
                 case ';':
-                    return TokenType.Semicolon;
+                    return TokenTypes.Semicolon;
                 case ',':
-                    return TokenType.Comma;
+                    return TokenTypes.Comma;
                 case ':':
-                    return TokenType.Colon;
+                    return TokenTypes.Colon;
 
                 // komentare
                 case '/':
@@ -206,7 +206,7 @@ namespace InterproceduralAnalysis
                         {
                             tokenText += ReadChar();
                         }
-                        return TokenType.Comment;
+                        return TokenTypes.Comment;
                     }
                     if (next == '*')
                     {
@@ -224,12 +224,12 @@ namespace InterproceduralAnalysis
                         if (!eoc)
                         {
                             errorMsg = "Neukonceny komentar";
-                            return TokenType.Error;
+                            return TokenTypes.Error;
                         }
-                        return TokenType.Comment;
+                        return TokenTypes.Comment;
                     }
                     errorMsg = string.Format("Neznamy znak '{0}', radek {1}, sloupec {2}", ch, chLine, chCol);
-                    return TokenType.Error;
+                    return TokenTypes.Error;
 
                 // reservovana slova, identifikatory & cisla & nezname znaky
                 default:
@@ -241,9 +241,9 @@ namespace InterproceduralAnalysis
                             tokenText += ReadChar();
                         }
 
-                        TokenType t;
+                        TokenTypes t;
                         if (!RW.TryGetValue(tokenText, out t))
-                            t = TokenType.Identifier;
+                            t = TokenTypes.Identifier;
                         return t;
                     }
                     else if (IsDigit(ch)) // cislo
@@ -266,7 +266,7 @@ namespace InterproceduralAnalysis
                                     }
                                     // pismeno v cisle znamena syntaktickou chybu
                                     errorMsg = string.Format("Neznamy znak '{0}', radek {1}, sloupec {2}", next, chLine, chCol + 1);
-                                    return TokenType.Error;
+                                    return TokenTypes.Error;
                                 }
 
                                 numEnd = true;
@@ -278,14 +278,14 @@ namespace InterproceduralAnalysis
                         char last = tokenText[tokenText.Length - 1];
                         if (!(IsDigit(last) || (hexa && IsHexaDigit(last)))) // tato podminka se vylepsi...
                         {
-                            errorMsg = string.Format("Spatny format cisla '{0}', radek {1}, sloupec {2}", tokenText, lineStart, colStart);
-                            return TokenType.Error;
+                            errorMsg = string.Format("Spatny format cisla '{0}', radek {1}, sloupec {2}", tokenText, tokenStartLine, tokenStartCol);
+                            return TokenTypes.Error;
                         }
-                        return TokenType.Number;
+                        return TokenTypes.Number;
                     }
 
                     errorMsg = string.Format("Neznamy znak '{0}', radek {1}, sloupec {2}", ch, chLine, chCol);
-                    return TokenType.Error;
+                    return TokenTypes.Error;
             }
 
         }
@@ -301,12 +301,12 @@ namespace InterproceduralAnalysis
             chLine = 1;
             chCol = 0;
 
-            TokenType token;
+            TokenTypes token;
 
             while (!eof)
             {
-                lineStart = chLine;
-                colStart = chCol;
+                tokenStartLine = chLine;
+                tokenStartCol = chCol;
                 token = GetToken();
 
                 if (!string.IsNullOrEmpty(errorMsg))
@@ -315,23 +315,23 @@ namespace InterproceduralAnalysis
                     yield break;
                 }
 
-                if ((isPrint) && (token != TokenType.Whitespace))
+                if ((isPrint) && (token != TokenTypes.Whitespace))
                 {
                     Console.WriteLine("{0}: '{1}'", token, tokenText);
                 }
 
-                if (token == TokenType.End) // konec cteni souboru
+                if (token == TokenTypes.End) // konec cteni souboru
                     break;
 
-                if ((token != TokenType.Comment) && (token != TokenType.Whitespace))
-                    yield return new TokenModel { Token = token, TokenText = tokenText, Line = lineStart, Column = colStart };
+                if ((token != TokenTypes.Comment) && (token != TokenTypes.Whitespace))
+                    yield return new TokenModel { Token = token, TokenText = tokenText, TokenStartLine = tokenStartLine, TokenStartColumn = tokenStartCol };
             }
 
             file.Close();
             file.Dispose();
 
             Console.WriteLine("End: file is closed");
-            yield return new TokenModel { Token = TokenType.End };
+            yield return new TokenModel { Token = TokenTypes.End };
         }
     }
 }
