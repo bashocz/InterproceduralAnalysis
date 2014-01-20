@@ -8,12 +8,16 @@ namespace InterproceduralAnalysis
     class SyntacticAnalyzer
     {
         // tridni promenne pro syntaktickou analyzu
-        private IList<TokenModel> tokens;
-        private int tokenIdx;
+        private BaseAst actualNode, nextNode;
+
+        private LexicalAnalyzer la;
+
+        public SyntacticAnalyzer(LexicalAnalyzer la)
+        {
+            this.la = la;
+        }
 
         private ProgramAst program;
-
-        private BaseAst actualNode, nextNode;
 
         // tridni promenne pro prioritu operatoru
         private const int opMax = 71;
@@ -143,6 +147,9 @@ namespace InterproceduralAnalysis
                     SetOperatorPriority(op);
                     return op;
 
+                case TokenTypes.Error:
+                    return ConvertTo<BaseAst>(token, AstNodeTypes.None);
+
                 default:
                     return ConvertTo<BaseAst>(token, AstNodeTypes.Variable);
             }
@@ -165,20 +172,10 @@ namespace InterproceduralAnalysis
 
         private void ReadNextAst()
         {
-            tokenIdx++;
-            while ((tokens[tokenIdx].Token == TokenTypes.Comment) && (tokenIdx < tokens.Count))
-                tokenIdx++;
-
-            if (tokenIdx < tokens.Count)
-            {
-                actualNode = GetAstNode(tokens[tokenIdx]);
-                nextNode = ((tokenIdx + 1) < tokens.Count) ? GetAstNode(tokens[tokenIdx + 1]) : GetEndAstNode();
-            }
-            else
-            {
-                actualNode = nextNode = GetEndAstNode();
-            }
-       }
+            la.ReadNextToken();
+            actualNode = GetAstNode(la.ActualToken);
+            nextNode = GetAstNode(la.NextToken);
+        }
 
         #region SA - global variables declaration
 
@@ -251,7 +248,7 @@ namespace InterproceduralAnalysis
 
             ReadNextAst();
             if ((actualNode.Token != TokenTypes.BraceLeft) && !(actualNode is BlockAst))
-                return GetErrorAstNode(string.Format("Je ocekavana leva slozena zavorka '{', radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
+                return GetErrorAstNode(string.Format("Je ocekavana leva slozena zavorka '{{', radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
 
             BaseAst node = GetFncBodyAST(actualNode as BlockAst);
             if (node.IsError)
@@ -1107,12 +1104,10 @@ namespace InterproceduralAnalysis
 
         #endregion SA - expression
 
-        public bool GetAST(IList<TokenModel> tokens, out ProgramAst prg)
+        public bool GetAST(out ProgramAst prg)
         {
-            this.tokens = tokens;
             program = new ProgramAst();
             prg = program;
-            tokenIdx = -1;
 
             BaseAst node = GetInitLoopAstNode();
             while ((node.Token != TokenTypes.End) && (!node.IsError))

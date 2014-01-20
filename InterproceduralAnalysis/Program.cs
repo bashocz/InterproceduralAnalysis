@@ -40,19 +40,21 @@ namespace InterproceduralAnalysis
             }
 
             LexicalAnalyzer la = new LexicalAnalyzer(programFile, printLA);
-            var ts = la.GetAllTokens();
-            Console.WriteLine("Pocet tokenu: {0}", ts.Count);
+            SyntacticAnalyzer sa = new SyntacticAnalyzer(la);
+            ProgramAst prg;
+            if (!sa.GetAST(out prg))
+            {
+                Console.ReadKey();
+                return -1;
+            }
 
-            SyntacticAnalyzer sa = new SyntacticAnalyzer();
-            ProgramAst p;
-            if (sa.GetAST(ts, out p))
-                Console.WriteLine("Pocet promennych: {0}, pocet funkci: {1}", p.VarsDecl.Count, p.OrigFncs.Count);
+            Console.WriteLine("Pocet promennych: {0}, pocet funkci: {1}", prg.VarsDecl.Count, prg.OrigFncs.Count);
 
             StatementConverter sc = new StatementConverter(printSA);
-            sc.ConvertToIfGoto(p);
+            sc.ConvertToIfGoto(prg);
 
             GraphGenerator gg = new GraphGenerator();
-            gg.CreateGraph(p);
+            gg.CreateGraph(prg);
 
             Console.ReadKey();
             return 0;

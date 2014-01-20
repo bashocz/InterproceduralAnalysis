@@ -290,12 +290,7 @@ namespace InterproceduralAnalysis
 
         }
 
-        public List<TokenModel> GetAllTokens()
-        {
-            return new List<TokenModel>(GetTokens());
-        }
-
-        public IEnumerable<TokenModel> GetTokens()
+        private IEnumerable<TokenModel> GetTokensFromFile()
         {
             file = new StreamReader(fileName);
             chLine = 1;
@@ -312,26 +307,68 @@ namespace InterproceduralAnalysis
                 if (!string.IsNullOrEmpty(errorMsg))
                 {
                     yield return new TokenModel { IsError = true, ErrorMessage = errorMsg };
+                    file.Close();
+                    file.Dispose();
                     yield break;
-                }
-
-                if ((isPrint) && (token != TokenTypes.Whitespace))
-                {
-                    Console.WriteLine("{0}: '{1}'", token, tokenText);
                 }
 
                 if (token == TokenTypes.End) // konec cteni souboru
                     break;
 
-                if ((token != TokenTypes.Comment) && (token != TokenTypes.Whitespace))
+                if (token != TokenTypes.Whitespace)
                     yield return new TokenModel { Token = token, TokenText = tokenText, TokenStartLine = tokenStartLine, TokenStartColumn = tokenStartCol };
             }
 
             file.Close();
             file.Dispose();
 
-            Console.WriteLine("End: file is closed");
-            yield return new TokenModel { Token = TokenTypes.End };
+            yield return new TokenModel { Token = TokenTypes.End, TokenText = "End: file is closed" };
         }
+
+        private List<TokenModel> tokens;
+        private int tokenIdx;
+        private TokenModel errorToken;
+
+        public bool ReadNextToken()
+        {
+            if (tokens == null)
+            {
+                tokens = new List<TokenModel>(GetTokensFromFile());
+                errorToken = null;
+                tokenIdx = -1;
+                if (tokens.Count == 0)
+                    errorToken = ActualToken = new TokenModel { IsError = true, ErrorMessage = "Zadny token, prazdny soubor..." };
+            }
+            if (errorToken != null)
+                return false;
+            if (tokenIdx >= tokens.Count)
+                return true; // konec souboru, vsechny tokeny precteny :-)
+
+            bool loop = true;
+            while (loop)
+            {
+                tokenIdx++;
+                if (isPrint)
+                    Console.WriteLine("{0}: '{1}'", tokens[tokenIdx].Token, tokens[tokenIdx].TokenText);
+                loop = ((tokenIdx < tokens.Count) && (tokens[tokenIdx].Token == TokenTypes.Comment));
+            }
+            ActualToken = tokens[tokenIdx];
+            if (ActualToken.IsError)
+            {
+                errorToken = ActualToken;
+                return false;
+            }
+
+            int nextIdx = tokenIdx + 1;
+            while ((nextIdx < tokens.Count) && (tokens[nextIdx].Token == TokenTypes.Comment))
+                nextIdx++;
+            if (nextIdx < tokens.Count)
+                NextToken = tokens[nextIdx];
+
+            return true;
+        }
+
+        public TokenModel ActualToken { get; private set; }
+        public TokenModel NextToken { get; private set; }
     }
 }
