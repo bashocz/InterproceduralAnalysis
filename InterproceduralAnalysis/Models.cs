@@ -11,38 +11,6 @@ namespace InterproceduralAnalysis
         public string ErrorMessage { get; set; }
     }
 
-    class ProgramAst : BaseAst
-    {
-        public ProgramAst()
-        {
-            AstType = AstNodeTypes.Program;
-        }
-
-        private Dictionary<string, BaseAst> vars;
-        public Dictionary<string, BaseAst> VarsDecl
-        {
-            get { return vars ?? (vars = new Dictionary<string, BaseAst>()); }
-        }
-
-        private Dictionary<string, FunctionAst> origFncs;
-        public Dictionary<string, FunctionAst> OrigFncs
-        {
-            get { return origFncs ?? (origFncs = new Dictionary<string, FunctionAst>()); }
-        }
-
-        private Dictionary<string, FunctionAst> convFncs;
-        public Dictionary<string, FunctionAst> ConvFncs
-        {
-            get { return convFncs ?? (convFncs = new Dictionary<string, FunctionAst>()); }
-        }
-
-        private Dictionary<string, IaNode> graph;
-        public Dictionary<string, IaNode> Graph
-        {
-            get { return graph ?? (graph = new Dictionary<string, IaNode>()); }
-        }
-    }
-
     // modely lexikalni analyzy
 
     enum TokenTypes
@@ -131,6 +99,21 @@ namespace InterproceduralAnalysis
     class BaseAst : TokenModel
     {
         public AstNodeTypes AstType { get; set; }
+
+        public static BaseAst GetEndAstNode()
+        {
+            return new BaseAst { Token = TokenTypes.End };
+        }
+
+        public static BaseAst GetInitLoopAstNode()
+        {
+            return new BaseAst { Token = TokenTypes.Comment };
+        }
+
+        public static BaseAst GetErrorAstNode(string errorMsg)
+        {
+            return new BaseAst { IsError = true, ErrorMessage = errorMsg, Token = TokenTypes.Error };
+        }
     }
 
     class BlockAst : BaseAst
@@ -185,6 +168,38 @@ namespace InterproceduralAnalysis
         public int Priority { get; set; }
         public BaseAst Left { get; set; }
         public BaseAst Right { get; set; }
+    }
+
+    class ProgramAst : BaseAst
+    {
+        public ProgramAst()
+        {
+            AstType = AstNodeTypes.Program;
+        }
+
+        private Dictionary<string, BaseAst> vars;
+        public Dictionary<string, BaseAst> VarsDecl
+        {
+            get { return vars ?? (vars = new Dictionary<string, BaseAst>()); }
+        }
+
+        private Dictionary<string, FunctionAst> origFncs;
+        public Dictionary<string, FunctionAst> OrigFncs
+        {
+            get { return origFncs ?? (origFncs = new Dictionary<string, FunctionAst>()); }
+        }
+
+        private Dictionary<string, FunctionAst> convFncs;
+        public Dictionary<string, FunctionAst> ConvFncs
+        {
+            get { return convFncs ?? (convFncs = new Dictionary<string, FunctionAst>()); }
+        }
+
+        private Dictionary<string, IaNode> graph;
+        public Dictionary<string, IaNode> Graph
+        {
+            get { return graph ?? (graph = new Dictionary<string, IaNode>()); }
+        }
     }
 
     // modely grafu

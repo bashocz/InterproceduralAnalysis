@@ -15,21 +15,11 @@ b--;
 ++x;
 if(b!=x){
 a = x - b;
+//error();      // toto bude chyba, neznama procedura
 }
 }
 f = a - b;
-return;
-}
-
-function count(){
-	e = a + b;
-	if (i + 3 >= j * 8 && i * 9 < j++){ 
-		/* e =*/ difference();      // volani funkce v expression jeste neumime :-)
-		for(i = 0; i < 10; i++)
-{
-  x = i;
-    }
-}
+count();
 return;
 }
 
@@ -53,10 +43,22 @@ else {
 	a = x + 3*y - 2*z;
 	b = 6 * (x - y - z);
 }
-//vysledek = 20- 5;      // toto bude chyba, neznamy indetifikator ale to jeste neumime :-)
+//vysledek = 20- 5;      // toto bude chyba, neznamy indetifikator
 
-/* c =*/ count();           // volani funkce v expression jeste neumime :-)
+count(); 
 
 one:
 c = a;
+}
+
+function count(){
+	e = a + b;
+	if (i + 3 >= j * 8 && i * 9 < j++){ 
+		difference();
+		for(i = 0; i < 10; i++)
+{
+  x = i;
+    }
+}
+return;
 }

@@ -121,7 +121,7 @@ namespace InterproceduralAnalysis
                     NumberAst number = ConvertTo<NumberAst>(token, AstNodeTypes.Number);
                     int num;
                     if (!TryParseNumber(number.TokenText, out num))
-                        return GetErrorAstNode(string.Format("Nespravny format cisla, radek {0}, sloupec {1}", number.TokenStartLine, number.TokenStartColumn));
+                        return BaseAst.GetErrorAstNode(string.Format("Nespravny format cisla, radek {0}, sloupec {1}", number.TokenStartLine, number.TokenStartColumn));
                     number.Number = num;
                     return number;
 
@@ -155,21 +155,6 @@ namespace InterproceduralAnalysis
             }
         }
 
-        private BaseAst GetEndAstNode()
-        {
-            return new BaseAst { Token = TokenTypes.End };
-        }
-
-        private BaseAst GetInitLoopAstNode()
-        {
-            return new BaseAst { Token = TokenTypes.Comment };
-        }
-
-        private BaseAst GetErrorAstNode(string errorMsg)
-        {
-            return new BaseAst { IsError = true, ErrorMessage = errorMsg, Token = TokenTypes.Error };
-        }
-
         private void ReadNextAst()
         {
             la.ReadNextToken();
@@ -185,10 +170,10 @@ namespace InterproceduralAnalysis
             while ((actualNode.Token != TokenTypes.Semicolon) && !(actualNode.IsError))
             {
                 if (actualNode.Token != TokenTypes.Identifier)
-                    return GetErrorAstNode(string.Format("Je ocekavan identifikator promenne, radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
+                    return BaseAst.GetErrorAstNode(string.Format("Je ocekavan identifikator promenne, radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
 
                 if (program.VarsDecl.Keys.Contains(actualNode.TokenText))
-                    return GetErrorAstNode(string.Format("Promenna '{0}' jiz byla deklarovana, radek {1}, sloupec {2}", actualNode.TokenText, actualNode.TokenStartLine, actualNode.TokenStartColumn));
+                    return BaseAst.GetErrorAstNode(string.Format("Promenna '{0}' jiz byla deklarovana, radek {1}, sloupec {2}", actualNode.TokenText, actualNode.TokenStartLine, actualNode.TokenStartColumn));
 
                 BaseAst var = actualNode;
 
@@ -214,7 +199,7 @@ namespace InterproceduralAnalysis
                         break;
 
                     default:
-                        return GetErrorAstNode(string.Format("Je ocekavan znak oddeleni ',' nebo ';' nebo znak prirazeni '=', radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
+                        return BaseAst.GetErrorAstNode(string.Format("Je ocekavan znak oddeleni ',' nebo ';' nebo znak prirazeni '=', radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
                 }
             }
 
@@ -228,27 +213,27 @@ namespace InterproceduralAnalysis
         private BaseAst GetFunctionAST(FunctionAst fnc)
         {
             if (fnc == null)
-                return GetErrorAstNode("Chybne volana funkce 'GetFunctionNode(FunctionAst fnc)', parametr 'fnc' je null");
+                return BaseAst.GetErrorAstNode("Chybne volana funkce 'GetFunctionNode(FunctionAst fnc)', parametr 'fnc' je null");
 
             ReadNextAst();
             if (actualNode.Token != TokenTypes.Identifier)
-                return GetErrorAstNode(string.Format("Je ocekavan identifikator funkce, radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
+                return BaseAst.GetErrorAstNode(string.Format("Je ocekavan identifikator funkce, radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
             if (program.OrigFncs.Keys.Contains(actualNode.TokenText))
-                return GetErrorAstNode(string.Format("Funkce '{0}' jiz byla deklarovana, radek {1}, sloupec {2}", actualNode.TokenText, actualNode.TokenStartLine, actualNode.TokenStartColumn));
+                return BaseAst.GetErrorAstNode(string.Format("Funkce '{0}' jiz byla deklarovana, radek {1}, sloupec {2}", actualNode.TokenText, actualNode.TokenStartLine, actualNode.TokenStartColumn));
 
             program.OrigFncs.Add(actualNode.TokenText, fnc);
 
             ReadNextAst();
             if (actualNode.Token != TokenTypes.ParenthesisLeft)
-                return GetErrorAstNode(string.Format("Je ocekavana leva zavorka '(', radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
+                return BaseAst.GetErrorAstNode(string.Format("Je ocekavana leva zavorka '(', radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
 
             ReadNextAst();
             if (actualNode.Token != TokenTypes.ParenthesisRight)
-                return GetErrorAstNode(string.Format("Je ocekavana prava zavorka ')', radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
+                return BaseAst.GetErrorAstNode(string.Format("Je ocekavana prava zavorka ')', radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
 
             ReadNextAst();
             if ((actualNode.Token != TokenTypes.BraceLeft) && !(actualNode is BlockAst))
-                return GetErrorAstNode(string.Format("Je ocekavana leva slozena zavorka '{{', radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
+                return BaseAst.GetErrorAstNode(string.Format("Je ocekavana leva slozena zavorka '{{', radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
 
             BaseAst node = GetFncBodyAST(actualNode as BlockAst);
             if (node.IsError)
@@ -261,9 +246,9 @@ namespace InterproceduralAnalysis
         private BaseAst GetFncBodyAST(BlockAst body)
         {
             if (body == null)
-                return GetErrorAstNode("Chybne volana funkce 'GetFncBodyNode(BlockAst body)', parametr 'body' je null");
+                return BaseAst.GetErrorAstNode("Chybne volana funkce 'GetFncBodyNode(BlockAst body)', parametr 'body' je null");
 
-            BaseAst node = GetInitLoopAstNode();
+            BaseAst node = BaseAst.GetInitLoopAstNode();
             while ((node.Token != TokenTypes.BraceRight) && !(node.IsError))
             {
                 node = GetStatementAST();
@@ -271,7 +256,7 @@ namespace InterproceduralAnalysis
                 switch (node.Token)
                 {
                     case TokenTypes.End:
-                        return GetErrorAstNode(string.Format("Konec programu, blok neni korektne ukoncen, radek {0}, sloupec {1}", node.TokenStartLine, node.TokenStartColumn));
+                        return BaseAst.GetErrorAstNode(string.Format("Konec programu, blok neni korektne ukoncen, radek {0}, sloupec {1}", node.TokenStartLine, node.TokenStartColumn));
 
                     case TokenTypes.BraceLeft:
                         node = GetBlockAST(node as BlockAst);
@@ -297,9 +282,9 @@ namespace InterproceduralAnalysis
         private BaseAst GetBlockAST(BlockAst block)
         {
             if (block == null)
-                return GetErrorAstNode("Chybne volana funkce 'GetBlockAST(BlockAst block)', parametr 'block' je null");
+                return BaseAst.GetErrorAstNode("Chybne volana funkce 'GetBlockAST(BlockAst block)', parametr 'block' je null");
 
-            BaseAst node = GetInitLoopAstNode();
+            BaseAst node = BaseAst.GetInitLoopAstNode();
             while ((node.Token != TokenTypes.BraceRight) && !(node.IsError))
             {
                 node = GetStatementAST();
@@ -307,7 +292,7 @@ namespace InterproceduralAnalysis
                 switch (node.Token)
                 {
                     case TokenTypes.End:
-                        return GetErrorAstNode(string.Format("Konec programu, blok neni korektne ukoncen, radek {0}, sloupec {1}", node.TokenStartLine, node.TokenStartColumn));
+                        return BaseAst.GetErrorAstNode(string.Format("Konec programu, blok neni korektne ukoncen, radek {0}, sloupec {1}", node.TokenStartLine, node.TokenStartColumn));
 
                     case TokenTypes.BraceLeft:
                         node = GetBlockAST(node as BlockAst);
@@ -340,7 +325,7 @@ namespace InterproceduralAnalysis
             switch (actualNode.Token)
             {
                 case TokenTypes.End:
-                    return GetErrorAstNode(string.Format("Konec programu, blok neni korektne ukoncen, radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
+                    return BaseAst.GetErrorAstNode(string.Format("Konec programu, blok neni korektne ukoncen, radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
 
                 case TokenTypes.IfRW:
                     node = GetIfAST(actualNode as IfAst);
@@ -393,7 +378,7 @@ namespace InterproceduralAnalysis
                             break;
 
                         default:
-                            return GetErrorAstNode(string.Format("Je ocekavan znak prirazeni '=', radek {0}, sloupec {1}", nextNode.TokenStartLine, nextNode.TokenStartColumn));
+                            return BaseAst.GetErrorAstNode(string.Format("Je ocekavan znak prirazeni '=', radek {0}, sloupec {1}", nextNode.TokenStartLine, nextNode.TokenStartColumn));
                     }
                     break;
 
@@ -404,17 +389,17 @@ namespace InterproceduralAnalysis
                     break;
 
                 case TokenTypes.VarRW:
-                    return GetErrorAstNode(string.Format("Lokalni promenne nejsou povoleny, radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
+                    return BaseAst.GetErrorAstNode(string.Format("Lokalni promenne nejsou povoleny, radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
 
                 case TokenTypes.FunctionRW:
-                    return GetErrorAstNode(string.Format("Vnorene funkce nejsou povoleny, radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
+                    return BaseAst.GetErrorAstNode(string.Format("Vnorene funkce nejsou povoleny, radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
 
                 default:
-                    return GetErrorAstNode(string.Format("Je ocekavan prikaz, radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
+                    return BaseAst.GetErrorAstNode(string.Format("Je ocekavan prikaz, radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
             }
 
             if (node == null)
-                return GetErrorAstNode("Vnitrni chyba funkce 'GetStatementAST'");
+                return BaseAst.GetErrorAstNode("Vnitrni chyba funkce 'GetStatementAST'");
 
             if (node.IsError)
                 return node;
@@ -423,7 +408,7 @@ namespace InterproceduralAnalysis
             {
                 ReadNextAst();
                 if (actualNode.Token != TokenTypes.Semicolon)
-                    return GetErrorAstNode(string.Format("Je ocekavan ';', radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
+                    return BaseAst.GetErrorAstNode(string.Format("Je ocekavan ';', radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
             }
 
             return node;
@@ -455,7 +440,7 @@ namespace InterproceduralAnalysis
         private BaseAst GetIfAST(IfAst cmd)
         {
             if (cmd == null)
-                return GetErrorAstNode("Chybne volana funkce 'GetIfAST(IfAst cmd)', parametr 'cmd' je null");
+                return BaseAst.GetErrorAstNode("Chybne volana funkce 'GetIfAST(IfAst cmd)', parametr 'cmd' je null");
 
             BaseAst cond;
             BaseAst tmp = GetCondAST(out cond);
@@ -492,7 +477,7 @@ namespace InterproceduralAnalysis
             switch (actualNode.Token)
             {
                 case TokenTypes.End:
-                    return GetErrorAstNode(string.Format("Konec programu, blok neni korektne ukoncen, radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
+                    return BaseAst.GetErrorAstNode(string.Format("Konec programu, blok neni korektne ukoncen, radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
 
                 case TokenTypes.Identifier:
                     switch (nextNode.Token)
@@ -511,7 +496,7 @@ namespace InterproceduralAnalysis
                             break;
 
                         default:
-                            return GetErrorAstNode(string.Format("Je ocekavan znak prirazeni '=', radek {0}, sloupec {1}", nextNode.TokenStartLine, nextNode.TokenStartColumn));
+                            return BaseAst.GetErrorAstNode(string.Format("Je ocekavan znak prirazeni '=', radek {0}, sloupec {1}", nextNode.TokenStartLine, nextNode.TokenStartColumn));
                     }
                     break;
 
@@ -521,7 +506,7 @@ namespace InterproceduralAnalysis
                     break;
 
                 default:
-                    return GetErrorAstNode(string.Format("Je ocekavan prikaz, radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
+                    return BaseAst.GetErrorAstNode(string.Format("Je ocekavan prikaz, radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
             }
 
             return node;
@@ -530,12 +515,12 @@ namespace InterproceduralAnalysis
         private BaseAst GetForAST(ForAst cmd)
         {
             if (cmd == null)
-                return GetErrorAstNode("Chybne volana funkce 'GetForAST(ForAst cmd)', parametr 'cmd' je null");
+                return BaseAst.GetErrorAstNode("Chybne volana funkce 'GetForAST(ForAst cmd)', parametr 'cmd' je null");
 
             // '('
             ReadNextAst();
             if (actualNode.Token != TokenTypes.ParenthesisLeft)
-                return GetErrorAstNode(string.Format("Je ocekavan '(', radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
+                return BaseAst.GetErrorAstNode(string.Format("Je ocekavan '(', radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
 
             // init command
             if (nextNode.Token != TokenTypes.Semicolon)
@@ -549,7 +534,7 @@ namespace InterproceduralAnalysis
             // ';'
             ReadNextAst();
             if (actualNode.Token != TokenTypes.Semicolon)
-                return GetErrorAstNode(string.Format("Je ocekavan ';', radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
+                return BaseAst.GetErrorAstNode(string.Format("Je ocekavan ';', radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
 
             // condition
             BaseAst cond;
@@ -561,7 +546,7 @@ namespace InterproceduralAnalysis
             // ';'
             ReadNextAst();
             if (actualNode.Token != TokenTypes.Semicolon)
-                return GetErrorAstNode(string.Format("Je ocekavan ';', radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
+                return BaseAst.GetErrorAstNode(string.Format("Je ocekavan ';', radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
 
             // close command
             if (nextNode.Token != TokenTypes.ParenthesisRight)
@@ -575,7 +560,7 @@ namespace InterproceduralAnalysis
             // ')'
             ReadNextAst();
             if (actualNode.Token != TokenTypes.ParenthesisRight)
-                return GetErrorAstNode(string.Format("Je ocekavan ')', radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
+                return BaseAst.GetErrorAstNode(string.Format("Je ocekavan ')', radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
 
             // body
             BaseAst st = StatementOrBlock();
@@ -593,7 +578,7 @@ namespace InterproceduralAnalysis
         private BaseAst GetWhileAST(WhileAst cmd)
         {
             if (cmd == null)
-                return GetErrorAstNode("Chybne volana funkce 'GetWhileAST(WhileAst cmd)', parametr 'cmd' je null");
+                return BaseAst.GetErrorAstNode("Chybne volana funkce 'GetWhileAST(WhileAst cmd)', parametr 'cmd' je null");
 
             BaseAst cond;
             BaseAst tmp = GetCondAST(out cond);
@@ -616,11 +601,11 @@ namespace InterproceduralAnalysis
         private BaseAst GetGotoAST(GotoAst cmd)
         {
             if (cmd == null)
-                return GetErrorAstNode("Chybne volana funkce 'GetGotoAST(GotoAst cmd)', parametr 'cmd' je null");
+                return BaseAst.GetErrorAstNode("Chybne volana funkce 'GetGotoAST(GotoAst cmd)', parametr 'cmd' je null");
 
             ReadNextAst();
             if (actualNode.Token != TokenTypes.Identifier)
-                return GetErrorAstNode(string.Format("Je ocekavano navesti, radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
+                return BaseAst.GetErrorAstNode(string.Format("Je ocekavano navesti, radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
 
             cmd.Label = actualNode.TokenText;
 
@@ -634,13 +619,13 @@ namespace InterproceduralAnalysis
         private BaseAst GetLabelAST(BaseAst label)
         {
             if ((label == null) || (label.AstType != AstNodeTypes.Variable))
-                return GetErrorAstNode("Chybne volana funkce 'GetLabelAST(BaseAst label)', parametr 'label' je null");
+                return BaseAst.GetErrorAstNode("Chybne volana funkce 'GetLabelAST(BaseAst label)', parametr 'label' je null");
 
             label.AstType = AstNodeTypes.Label;
 
             ReadNextAst();
             if (actualNode.Token != TokenTypes.Colon)
-                return GetErrorAstNode(string.Format("Je ocekavana ':', radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
+                return BaseAst.GetErrorAstNode(string.Format("Je ocekavana ':', radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
 
             return label;
         }
@@ -652,7 +637,7 @@ namespace InterproceduralAnalysis
         private BaseAst GetReturnAST(BaseAst cmd)
         {
             if ((cmd == null) || (cmd.AstType != AstNodeTypes.Return))
-                return GetErrorAstNode("Chybne volana funkce 'GetReturnAST(BaseAst cmd)', parametr 'cmd' je null");
+                return BaseAst.GetErrorAstNode("Chybne volana funkce 'GetReturnAST(BaseAst cmd)', parametr 'cmd' je null");
 
             cmd.AstType = AstNodeTypes.Return;
 
@@ -674,20 +659,20 @@ namespace InterproceduralAnalysis
         private BaseAst GetFunctionCallAST(BaseAst cmd)
         {
             if ((cmd == null) || (cmd.AstType != AstNodeTypes.Variable))
-                return GetErrorAstNode("Chybne volana funkce 'GetFunctionCallAST(BaseAst cmd)', parametr 'cmd' je null");
+                return BaseAst.GetErrorAstNode("Chybne volana funkce 'GetFunctionCallAST(BaseAst cmd)', parametr 'cmd' je null");
 
             cmd.AstType = AstNodeTypes.FunctionCall;
 
-            if (!program.OrigFncs.Keys.Contains(cmd.TokenText))
-                return GetErrorAstNode(string.Format("Funkce '{0}' doposud nebyla deklarovana, radek {1}, sloupec {2}", cmd.TokenText, cmd.TokenStartLine, cmd.TokenStartColumn));
+            //if (!program.OrigFncs.Keys.Contains(cmd.TokenText))
+            //    return GetErrorAstNode(string.Format("Funkce '{0}' doposud nebyla deklarovana, radek {1}, sloupec {2}", cmd.TokenText, cmd.TokenStartLine, cmd.TokenStartColumn));
 
             ReadNextAst();
             if (actualNode.Token != TokenTypes.ParenthesisLeft)
-                return GetErrorAstNode(string.Format("Je ocekavan '(', radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
+                return BaseAst.GetErrorAstNode(string.Format("Je ocekavan '(', radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
 
             ReadNextAst();
             if (actualNode.Token != TokenTypes.ParenthesisRight)
-                return GetErrorAstNode(string.Format("Je ocekavan ')', radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
+                return BaseAst.GetErrorAstNode(string.Format("Je ocekavan ')', radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
 
             return cmd;
         }
@@ -699,14 +684,14 @@ namespace InterproceduralAnalysis
         private BaseAst GetAssignmentAST(BaseAst var)
         {
             if ((var == null) || (var.AstType != AstNodeTypes.Variable))
-                return GetErrorAstNode("Chybne volana funkce 'GetAssignmentAST(BaseAst var)', parametr 'var' je null");
+                return BaseAst.GetErrorAstNode("Chybne volana funkce 'GetAssignmentAST(BaseAst var)', parametr 'var' je null");
             if (!program.VarsDecl.Keys.Contains(var.TokenText))
-                return GetErrorAstNode(string.Format("Promenna '{0}' doposud nebyla deklarovana, radek {1}, sloupec {2}", var.TokenText, var.TokenStartLine, var.TokenStartColumn));
+                return BaseAst.GetErrorAstNode(string.Format("Promenna '{0}' doposud nebyla deklarovana, radek {1}, sloupec {2}", var.TokenText, var.TokenStartLine, var.TokenStartColumn));
 
             ReadNextAst();
             OperatorAst cmd = actualNode as OperatorAst;
             if ((cmd == null) || (cmd.Token != TokenTypes.Equals))
-                return GetErrorAstNode(string.Format("Je ocekavan operator '=', radek {0}, sloupec {1}", cmd.TokenStartLine, cmd.TokenStartColumn));
+                return BaseAst.GetErrorAstNode(string.Format("Je ocekavan operator '=', radek {0}, sloupec {1}", cmd.TokenStartLine, cmd.TokenStartColumn));
 
             cmd.Left = var;
 
@@ -726,12 +711,12 @@ namespace InterproceduralAnalysis
         private BaseAst GetUnaryOpAST(BaseAst var)
         {
             if ((var == null) || (var.AstType != AstNodeTypes.Variable))
-                return GetErrorAstNode("Chybne volana funkce 'GetUnaryOpAST(BaseAst var)', parametr 'var' je null");
+                return BaseAst.GetErrorAstNode("Chybne volana funkce 'GetUnaryOpAST(BaseAst var)', parametr 'var' je null");
 
             ReadNextAst();
             OperatorAst cmd = actualNode as OperatorAst;
             if ((cmd == null) || ((cmd.Token != TokenTypes.PlusPlus) && (cmd.Token != TokenTypes.MinusMinus)))
-                return GetErrorAstNode(string.Format("Je ocekavan operator '++' nebo '--', radek {0}, sloupec {1}", cmd.TokenStartLine, cmd.TokenStartColumn));
+                return BaseAst.GetErrorAstNode(string.Format("Je ocekavan operator '++' nebo '--', radek {0}, sloupec {1}", cmd.TokenStartLine, cmd.TokenStartColumn));
 
             cmd.Left = var;
 
@@ -741,11 +726,11 @@ namespace InterproceduralAnalysis
         private BaseAst GetUnaryOpAST(OperatorAst cmd)
         {
             if (cmd == null)
-                return GetErrorAstNode("Chybne volana funkce 'GetUnaryOpAST(OperatorAst cmd)', parametr 'cmd' je null");
+                return BaseAst.GetErrorAstNode("Chybne volana funkce 'GetUnaryOpAST(OperatorAst cmd)', parametr 'cmd' je null");
 
             ReadNextAst();
             if (actualNode.Token != TokenTypes.Identifier)
-                return GetErrorAstNode(string.Format("Je ocekavano navesti, radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
+                return BaseAst.GetErrorAstNode(string.Format("Je ocekavano navesti, radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
 
             cmd.Right = actualNode;
 
@@ -773,13 +758,13 @@ namespace InterproceduralAnalysis
             switch (actualNode.Token)
             {
                 case TokenTypes.End:
-                    node = GetErrorAstNode(string.Format("Konec programu, vyraz neni korektne ukoncen, radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
+                    node = BaseAst.GetErrorAstNode(string.Format("Konec programu, vyraz neni korektne ukoncen, radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
                     return false;
 
                 case TokenTypes.Identifier:
                     if (!program.VarsDecl.Keys.Contains(actualNode.TokenText))
                     {
-                        node = GetErrorAstNode(string.Format("Promenna '{0}' doposud nebyla deklarovana, radek {1}, sloupec {2}", actualNode.TokenText, actualNode.TokenStartLine, actualNode.TokenStartColumn));
+                        node = BaseAst.GetErrorAstNode(string.Format("Promenna '{0}' doposud nebyla deklarovana, radek {1}, sloupec {2}", actualNode.TokenText, actualNode.TokenStartLine, actualNode.TokenStartColumn));
                         return false;
                     }
                     node = actualNode;
@@ -789,7 +774,7 @@ namespace InterproceduralAnalysis
                         nodeO = actualNode as OperatorAst;
                         if (nodeO == null)
                         {
-                            node = GetErrorAstNode(string.Format("Nespravny AST datovy typ operatoru, radek {0}, sloupec {1}", nodeO.TokenStartLine, nodeO.TokenStartColumn));
+                            node = BaseAst.GetErrorAstNode(string.Format("Nespravny AST datovy typ operatoru, radek {0}, sloupec {1}", nodeO.TokenStartLine, nodeO.TokenStartColumn));
                             return false;
                         }
                         nodeO.Left = node;
@@ -813,7 +798,7 @@ namespace InterproceduralAnalysis
                     {
                         case TokenTypes.VarRW:
                             // to-do
-                            node = GetErrorAstNode("Momentalne nepodporujeme '- variable'");
+                            node = BaseAst.GetErrorAstNode("Momentalne nepodporujeme '- variable'");
                             return false;
 
                         case TokenTypes.Number:
@@ -823,7 +808,7 @@ namespace InterproceduralAnalysis
                             return true;
 
                         default:
-                            node = GetErrorAstNode(string.Format("Je ocekavan identifikator promenne, radek {0}, sloupec {1}'", actualNode.TokenStartLine, actualNode.TokenStartColumn));
+                            node = BaseAst.GetErrorAstNode(string.Format("Je ocekavan identifikator promenne, radek {0}, sloupec {1}'", actualNode.TokenStartLine, actualNode.TokenStartColumn));
                             return false;
                     }
 
@@ -832,18 +817,18 @@ namespace InterproceduralAnalysis
                     nodeO = (OperatorAst)actualNode;
                     if (nodeO == null)
                     {
-                        node = GetErrorAstNode(string.Format("Nespravny AST datovy typ operatoru, radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
+                        node = BaseAst.GetErrorAstNode(string.Format("Nespravny AST datovy typ operatoru, radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
                         return false;
                     }
                     ReadNextAst();
                     if (actualNode.Token != TokenTypes.Identifier)
                     {
-                        node = GetErrorAstNode(string.Format("Je ocekavan identifikator promenne, radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
+                        node = BaseAst.GetErrorAstNode(string.Format("Je ocekavan identifikator promenne, radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
                         return false;
                     }
                     if (!program.VarsDecl.Keys.Contains(actualNode.TokenText))
                     {
-                        node = GetErrorAstNode(string.Format("Promenna '{0}' doposud nebyla deklarovana, radek {1}, sloupec {2}", actualNode.TokenText, actualNode.TokenStartLine, actualNode.TokenStartColumn));
+                        node = BaseAst.GetErrorAstNode(string.Format("Promenna '{0}' doposud nebyla deklarovana, radek {1}, sloupec {2}", actualNode.TokenText, actualNode.TokenStartLine, actualNode.TokenStartColumn));
                         return false;
                     }
                     nodeO.Right = actualNode;
@@ -863,7 +848,7 @@ namespace InterproceduralAnalysis
             switch (node.Token)
             {
                 case TokenTypes.End:
-                    node = GetErrorAstNode(string.Format("Konec programu, vyraz neni korektne ukoncen, radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
+                    node = BaseAst.GetErrorAstNode(string.Format("Konec programu, vyraz neni korektne ukoncen, radek {0}, sloupec {1}", actualNode.TokenStartLine, actualNode.TokenStartColumn));
                     return false;
 
                 case TokenTypes.Plus:
@@ -966,17 +951,17 @@ namespace InterproceduralAnalysis
                             OperatorAst nodeN = (OperatorAst)node;
                             GetOperandNode(out node); // must be '('
                             if (node.Token != TokenTypes.ParenthesisLeft)
-                                return GetErrorAstNode(string.Format("Po operaci negace je ocekavana leva zavorka, radek {0}, sloupec {1}", node.TokenStartLine, node.TokenStartColumn));
+                                return BaseAst.GetErrorAstNode(string.Format("Po operaci negace je ocekavana leva zavorka, radek {0}, sloupec {1}", node.TokenStartLine, node.TokenStartColumn));
                             BaseAst nodePRn = GetSubExprAST(out node, level + 1, isCond);
                             if (nodePRn.IsError)
                                 return nodePRn;
                             if (nodePRn.Token != TokenTypes.ParenthesisRight)
-                                return GetErrorAstNode(string.Format("Vyraz neni korektne ukoncen pravou zavorkou, radek {0}, sloupec {1}", nodePRn.TokenStartLine, nodePRn.TokenStartColumn));
+                                return BaseAst.GetErrorAstNode(string.Format("Vyraz neni korektne ukoncen pravou zavorkou, radek {0}, sloupec {1}", nodePRn.TokenStartLine, nodePRn.TokenStartColumn));
                             nodeN.Right = node;
                             node = nodeN;
                         }
                         else
-                            return GetErrorAstNode(string.Format("Chybna operace negace, radek {0}, sloupec {1}", node.TokenStartLine, node.TokenStartColumn));
+                            return BaseAst.GetErrorAstNode(string.Format("Chybna operace negace, radek {0}, sloupec {1}", node.TokenStartLine, node.TokenStartColumn));
                         break;
 
                     case TokenTypes.ParenthesisLeft:
@@ -984,17 +969,17 @@ namespace InterproceduralAnalysis
                         if (nodePR.IsError)
                             return nodePR;
                         if (nodePR.Token != TokenTypes.ParenthesisRight)
-                            return GetErrorAstNode(string.Format("Vyraz neni korektne ukoncen pravou zavorkou, radek {0}, sloupec {1}", nodePR.TokenStartLine, nodePR.TokenStartColumn));
+                            return BaseAst.GetErrorAstNode(string.Format("Vyraz neni korektne ukoncen pravou zavorkou, radek {0}, sloupec {1}", nodePR.TokenStartLine, nodePR.TokenStartColumn));
                         break;
 
                     case TokenTypes.ParenthesisRight:
-                        return GetErrorAstNode(string.Format("Chybna prava zavorka, radek {0}, sloupec {1}", node.TokenStartLine, node.TokenStartColumn));
+                        return BaseAst.GetErrorAstNode(string.Format("Chybna prava zavorka, radek {0}, sloupec {1}", node.TokenStartLine, node.TokenStartColumn));
 
                     case TokenTypes.Error:
                         return node;
 
                     default:
-                        return GetErrorAstNode(string.Format("Prazdny vyraz, radek {0}, sloupec {1}", node.TokenStartLine, node.TokenStartColumn));
+                        return BaseAst.GetErrorAstNode(string.Format("Prazdny vyraz, radek {0}, sloupec {1}", node.TokenStartLine, node.TokenStartColumn));
                 }
             }
 
@@ -1009,18 +994,18 @@ namespace InterproceduralAnalysis
                         case TokenTypes.Identifier:
                         case TokenTypes.Number:
                         case TokenTypes.ParenthesisLeft:
-                            return GetErrorAstNode(string.Format("Nespravne formatovany vyraz, je ocekavan operator, radek {0}, sloupec {1}", node.TokenStartLine, node.TokenStartColumn));
+                            return BaseAst.GetErrorAstNode(string.Format("Nespravne formatovany vyraz, je ocekavan operator, radek {0}, sloupec {1}", node.TokenStartLine, node.TokenStartColumn));
                     }
                     if (node.Token == TokenTypes.ParenthesisRight)
                     {
                         if (level == 0)
-                            return GetErrorAstNode(string.Format("Chybna prava zavorka, radek {0}, sloupec {1}", node.TokenStartLine, node.TokenStartColumn));
+                            return BaseAst.GetErrorAstNode(string.Format("Chybna prava zavorka, radek {0}, sloupec {1}", node.TokenStartLine, node.TokenStartColumn));
                         break;
                     }
                     continue;
                 }
                 if (!isCond && ((node.Token == TokenTypes.Multi) && (nodes[nodes.Count - 1].Token != TokenTypes.Number)))
-                    return GetErrorAstNode(string.Format("Pred nasobenim muze byt pouze cislo, radek {0}, sloupec {1}", node.TokenStartLine, node.TokenStartColumn));
+                    return BaseAst.GetErrorAstNode(string.Format("Pred nasobenim muze byt pouze cislo, radek {0}, sloupec {1}", node.TokenStartLine, node.TokenStartColumn));
 
                 nodes.Add(node);
 
@@ -1034,17 +1019,17 @@ namespace InterproceduralAnalysis
                                 OperatorAst nodeN = (OperatorAst)node;
                                 GetOperandNode(out node); // must be '('
                                 if (node.Token != TokenTypes.ParenthesisLeft)
-                                    return GetErrorAstNode(string.Format("Po operaci negace je ocekavana leva zavorka, radek {0}, sloupec {1}", node.TokenStartLine, node.TokenStartColumn));
+                                    return BaseAst.GetErrorAstNode(string.Format("Po operaci negace je ocekavana leva zavorka, radek {0}, sloupec {1}", node.TokenStartLine, node.TokenStartColumn));
                                 BaseAst nodePRn = GetSubExprAST(out node, level + 1, isCond);
                                 if (nodePRn.IsError)
                                     return nodePRn;
                                 if (nodePRn.Token != TokenTypes.ParenthesisRight)
-                                    return GetErrorAstNode(string.Format("Vyraz neni korektne ukoncen pravou zavorkou, radek {0}, sloupec {1}", nodePRn.TokenStartLine, nodePRn.TokenStartColumn));
+                                    return BaseAst.GetErrorAstNode(string.Format("Vyraz neni korektne ukoncen pravou zavorkou, radek {0}, sloupec {1}", nodePRn.TokenStartLine, nodePRn.TokenStartColumn));
                                 nodeN.Right = node;
                                 node = nodeN;
                             }
                             else
-                                return GetErrorAstNode(string.Format("Chybna operace negace, radek {0}, sloupec {1}", node.TokenStartLine, node.TokenStartColumn));
+                                return BaseAst.GetErrorAstNode(string.Format("Chybna operace negace, radek {0}, sloupec {1}", node.TokenStartLine, node.TokenStartColumn));
                             break;
 
                         case TokenTypes.ParenthesisLeft:
@@ -1052,21 +1037,21 @@ namespace InterproceduralAnalysis
                             if (nodePR.IsError)
                                 return nodePR;
                             if (nodePR.Token != TokenTypes.ParenthesisRight)
-                                return GetErrorAstNode(string.Format("Vyraz neni korektne ukoncen pravou zavorkou, radek {0}, sloupec {1}", nodePR.TokenStartLine, nodePR.TokenStartColumn));
+                                return BaseAst.GetErrorAstNode(string.Format("Vyraz neni korektne ukoncen pravou zavorkou, radek {0}, sloupec {1}", nodePR.TokenStartLine, nodePR.TokenStartColumn));
                             break;
 
                         case TokenTypes.Error:
                             return node;
 
                         default:
-                            return GetErrorAstNode(string.Format("Nespravne formatovany vyraz, je ocekavan cislo, promenna nebo leva zavorka, radek {0}, sloupec {1}", node.TokenStartLine, node.TokenStartColumn));
+                            return BaseAst.GetErrorAstNode(string.Format("Nespravne formatovany vyraz, je ocekavan cislo, promenna nebo leva zavorka, radek {0}, sloupec {1}", node.TokenStartLine, node.TokenStartColumn));
                     }
                 }
                 nodes.Add(node);
             }
 
             if (nodes.Count == 0)
-                return GetErrorAstNode(string.Format("Nespravne formatovany vyraz, je ocekavan cislo, promenna nebo leva zavorka, radek {0}, sloupec {1}", node.TokenStartLine, node.TokenStartColumn));
+                return BaseAst.GetErrorAstNode(string.Format("Nespravne formatovany vyraz, je ocekavan cislo, promenna nebo leva zavorka, radek {0}, sloupec {1}", node.TokenStartLine, node.TokenStartColumn));
 
             int op = 10;
             while ((op < opMax) && (nodes.Count > 1))
@@ -1075,11 +1060,11 @@ namespace InterproceduralAnalysis
                 while (i < nodes.Count)
                 {
                     if (i >= (nodes.Count - 1))
-                        return GetErrorAstNode("Nespravne formatovany vyraz... chybny pocet operandu");
+                        return BaseAst.GetErrorAstNode("Nespravne formatovany vyraz... chybny pocet operandu");
 
                     OperatorAst oper = nodes[i] as OperatorAst;
                     if (oper == null)
-                        return GetErrorAstNode("Nespravne formatovany vyraz... uzel neni operace");
+                        return BaseAst.GetErrorAstNode("Nespravne formatovany vyraz... uzel neni operace");
 
                     if (oper.Priority == op)
                     {
@@ -1095,7 +1080,7 @@ namespace InterproceduralAnalysis
                 op += 10; // increase operation priority
             }
             if (nodes.Count != 1)
-                return GetErrorAstNode("Nespravne formatovany vyraz... nedobre utvoreny AST");
+                return BaseAst.GetErrorAstNode("Nespravne formatovany vyraz... nedobre utvoreny AST");
 
             expr = nodes[0];
 
@@ -1109,7 +1094,7 @@ namespace InterproceduralAnalysis
             program = new ProgramAst();
             prg = program;
 
-            BaseAst node = GetInitLoopAstNode();
+            BaseAst node = BaseAst.GetInitLoopAstNode();
             while ((node.Token != TokenTypes.End) && (!node.IsError))
             {
                 ReadNextAst();
@@ -1132,7 +1117,7 @@ namespace InterproceduralAnalysis
 
 
                     default:
-                        node = GetErrorAstNode(string.Format("Je ocekavano klicove slovo 'var' nebo 'function', radek {0}, sloupec {1}", node.TokenStartLine, node.TokenStartColumn));
+                        node = BaseAst.GetErrorAstNode(string.Format("Je ocekavano klicove slovo 'var' nebo 'function', radek {0}, sloupec {1}", node.TokenStartLine, node.TokenStartColumn));
                         break;
                 }
             }

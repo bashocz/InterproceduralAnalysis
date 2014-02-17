@@ -48,6 +48,13 @@ namespace InterproceduralAnalysis
                 return -1;
             }
 
+            SemanticAnalyzer sea = new SemanticAnalyzer();
+            if (!sea.CheckAST(prg))
+            {
+                Console.ReadKey();
+                return -1;
+            }
+
             Console.WriteLine("Pocet promennych: {0}, pocet funkci: {1}", prg.VarsDecl.Count, prg.OrigFncs.Count);
 
             StatementConverter sc = new StatementConverter(printSA);
