@@ -12,20 +12,25 @@ namespace InterproceduralAnalysis
             int w = 8;
             int n = 3;
             long[] v = { 2, 4, 3 ,7};
+            long[,] a = { { 1, 167, 56, 4 }, { 0, 92, 116, 246 }, { 0, 133, 215, 15 }, { 0, 114, 38, 21 } };
+            long[,] b = { { 1, 4, 8, 0 }, { 0, 3, 0, 0 }, { 0, 249, 2, 0 }, { 0, 5, 252, 1 } };
 
             ComputeReduction cr = new ComputeReduction(w);
             ComputeMatrix cm = new ComputeMatrix(w, n);
+            
             long[,] m = cm.GetIdentity();
-
-            this.PrintMatix(m);
+            this.PrintMatrix(m);
 
             long[] x = cm.Multiplication(m, v);
             this.Print(x);
 
-            long[,] a = { { 1, 167, 56, 4 }, { 0, 92, 116, 246 }, { 0, 133, 215, 15 }, { 0, 114, 38, 21 } };
-            this.PrintMatix(a);
+            this.PrintMatrix(a);
             x = cm.Multiplication(a, v);
             this.Print(x);
+
+            this.PrintMatrix(b);
+            m = cm.Multiplication(a, b);
+            this.PrintMatrix(m);
 
             Console.ReadKey();
         }
@@ -39,7 +44,7 @@ namespace InterproceduralAnalysis
             Console.WriteLine();
         }
 
-        private void PrintMatix(long[,] m)
+        private void PrintMatrix(long[,] m)
         {
             for (int j = 0; j < m.GetLength(1); j++)
             {

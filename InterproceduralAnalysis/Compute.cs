@@ -101,5 +101,25 @@ namespace InterproceduralAnalysis
 
             return w;
         }
+
+        public long[,] Multiplication(long[,] m, long[,] n)
+        {
+            int k = m.GetLength(0);
+            int l = n.GetLength(1);
+            long[,] result = new long[k,l];
+
+            for (int i = 0; i < k; i++)
+            {
+                for (int j = 0; j < l; j++)
+                {
+                    long sum = 0;
+                    for (int s = 0; s < k; s++)
+                        sum += m[s, j] * n[i, s];
+                    result[i, j] = sum;
+                }
+            }
+
+            return result;
+        }
     }
 }
