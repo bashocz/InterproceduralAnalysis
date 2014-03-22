@@ -19,6 +19,11 @@ namespace InterproceduralAnalysis
 
             p = GetPrime(w);
             a = GetRArray(w, p);
+
+            /*Test*/
+            Test test = new Test();
+            test.Print(a);
+            /*test*/
         }
 
         private int GetPrime(int w)

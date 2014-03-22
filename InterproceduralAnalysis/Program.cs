@@ -14,14 +14,22 @@ namespace InterproceduralAnalysis
         private static string programFile;
         private static bool printLA;
         private static bool printSA;
+        private static bool test;
 
         static int Main(string[] args)
         {
             //programName = args[0];
-            programFile = @"D:\Projects\github\InterproceduralAnalysis\InterproceduralAnalysis\program.txt";
+            programFile = @"C:\Users\Míša\Documents\Visual Studio 2010\Projects\InterproceduralAnalysis\InterproceduralAnalysis\program.txt";
             //printLA = arg[1];
-            printLA = true;
-            printSA = true;
+            printLA = false;
+            printSA = false;
+            test = true;
+
+            if (test)
+            {
+                Test t = new Test();
+                t.ComputeTest();
+            }
 
             if (programFile == null)
             {

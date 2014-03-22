@@ -51,6 +51,7 @@
     <Compile Include="SemanticAnalyzer.cs" />
     <Compile Include="StatementConverter.cs" />
     <Compile Include="SyntacticAnalyzer.cs" />
+    <Compile Include="Test.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="program.txt" />
