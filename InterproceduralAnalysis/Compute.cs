@@ -89,37 +89,41 @@ namespace InterproceduralAnalysis
 
         public long[] Multiplication(long[,] m, long[] v)
         {
-            int k = m.GetLength(0);
-            if (k != v.Length)
+            int z = m.GetLength(0);
+            if (z != v.Length)
                 throw new ApplicationException();
 
             int l = m.GetLength(1);
             long[] w = new long[l];
             for (int j = 0; j < l; j++)
-                for (int i = 0; i < k; i++)
-                    w[j] += m[i, j] * v[i];
+                for (int a = 0; a < z; a++)
+                    w[j] += m[a, j] * v[a];
 
             return w;
         }
 
         public long[,] Multiplication(long[,] m, long[,] n)
         {
-            int k = m.GetLength(0);
-            int l = n.GetLength(1);
-            long[,] result = new long[k,l];
+            int z = m.GetLength(0);
+            if (z != n.GetLength(1))
+                throw new ApplicationException();
+
+            int k = n.GetLength(0);
+            int l = m.GetLength(1);
+            long[,] r = new long[k, l];
 
             for (int i = 0; i < k; i++)
             {
                 for (int j = 0; j < l; j++)
                 {
                     long sum = 0;
-                    for (int s = 0; s < k; s++)
-                        sum += m[s, j] * n[i, s];
-                    result[i, j] = sum;
+                    for (int a = 0; a < k; a++)
+                        sum += m[a, j] * n[i, a];
+                    r[i, j] = sum;
                 }
             }
 
-            return result;
+            return r;
         }
     }
 }
