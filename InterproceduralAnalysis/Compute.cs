@@ -5,25 +5,24 @@ using System.Text;
 
 namespace InterproceduralAnalysis
 {
-    class ComputeReduction
+    class ComputeMatrix
     {
-        private readonly int w, p;
+        protected readonly int w, n;
+        protected readonly long m;
+        private readonly int p;
         private readonly int[] a;
 
-        public ComputeReduction(int w)
+        public ComputeMatrix(int w, int n)
         {
-            if (w <= 0)
-                throw new ApplicationException("");
+            if ((w <= 0) || (n < 0))
+                throw new ApplicationException();
 
             this.w = w;
+            this.m = (long)Math.Pow(2, w);
+            this.n = n + 1; // velikost matice G... +1 pro konstanty
 
             p = GetPrime(w);
             a = GetRArray(w, p);
-
-            /*Test*/
-            Test test = new Test();
-            test.Print(a);
-            /*test*/
         }
 
         private int GetPrime(int w)
@@ -58,59 +57,55 @@ namespace InterproceduralAnalysis
             return a;
         }
 
-        public int Reduction(int n, ref int d)
+        public int Reduction(long nr, out int d)
         {
-            int r = a[(n & (-n)) % p];
-            d = n >> r;
+            if ((nr % 2) != 0)
+            {
+                d = (int)nr;
+                return 0;
+            }
+            int r = a[(nr & (-nr)) % p];
+            d = (int)(nr >> r);
             return r;
         }
-    }
 
-    class ComputeMatrix
-    {
-        private readonly int w, n;
-
-        public ComputeMatrix(int w, int n)
+        public long[][] GetEmpty()
         {
-            if ((w <= 0) || (n < 0))
-                throw new ApplicationException();
-
-            this.w = w;
-            this.n = n + 1; // velikost matice G... +1 pro konstanty
+            return GetMArray(n, n);
         }
 
-        public long[,] GetIdentity()
+        public long[][] GetIdentity()
         {
-            long[,] m = new long[n, n];
+            long[][] mx = GetMArray(n, n);
             for (int i = 0; i < n; i++)
-                m[i, i] = 1;
-            return m;
+                mx[i][i] = 1;
+            return mx;
         }
 
-        public long[] Multiplication(long[,] m, long[] v)
+        public long[] Multiplication(long[][] mx, long[] vr)
         {
-            int z = m.GetLength(0);
-            if (z != v.Length)
+            int z = mx.Length;
+            if (z != vr.Length)
                 throw new ApplicationException();
 
-            int l = m.GetLength(1);
-            long[] w = new long[l];
+            int l = mx[0].Length;
+            long[] wr = new long[l];
             for (int j = 0; j < l; j++)
                 for (int a = 0; a < z; a++)
-                    w[j] += m[a, j] * v[a];
+                    wr[j] += mx[a][j] * vr[a];
 
-            return w;
+            return wr;
         }
 
-        public long[,] Multiplication(long[,] m, long[,] n)
+        public long[][] Multiplication(long[][] mx, long[][] nx)
         {
-            int z = m.GetLength(0);
-            if (z != n.GetLength(1))
+            int z = mx.Length;
+            if (z != nx[0].Length)
                 throw new ApplicationException();
 
-            int k = n.GetLength(0);
-            int l = m.GetLength(1);
-            long[,] r = new long[k, l];
+            int k = nx.Length;
+            int l = mx[0].Length;
+            long[][] r = GetMArray(k, l);
 
             for (int i = 0; i < k; i++)
             {
@@ -118,12 +113,151 @@ namespace InterproceduralAnalysis
                 {
                     long sum = 0;
                     for (int a = 0; a < k; a++)
-                        sum += m[a, j] * n[i, a];
-                    r[i, j] = sum;
+                        sum += mx[a][j] * nx[i][a];
+                    r[i][j] = sum;
                 }
             }
 
             return r;
+        }
+
+        private long[][] GetMArray(int k, int l)
+        {
+            long[][] mx = new long[k][];
+            for (int i = 0; i < l; i++)
+                mx[i] = new long[l];
+            return mx;
+        }
+    }
+
+    class TempVector
+    {
+        private readonly long[] vr;
+        private readonly int li;
+
+        public TempVector(long[] vr)
+        {
+            this.vr = vr;
+            li = GetLeadIndex(vr);
+        }
+
+        private int GetLeadIndex(long[] vr)
+        {
+            int k = vr.Length, li = -1;
+            for (int i = 0; i < k; i++)
+                if (vr[i] != 0)
+                {
+                    li = i;
+                    break;
+                }
+            return li;
+        }
+
+        public long[] Vr
+        {
+            get { return vr; }
+        }
+
+        public int Lidx
+        {
+            get { return li; }
+        }
+
+        public long Litem
+        {
+            get
+            {
+                if ((li >= 0) && (li < vr.Length))
+                    return vr[li];
+                return 0;
+            }
+        }
+    }
+
+    class RMatrix : ComputeMatrix
+    {
+        private readonly TempVector[] tmx;
+        private readonly long[][] mx;
+
+        public RMatrix(int w, int n)
+            : base(w, n)
+        {
+            mx = GetEmpty();
+            tmx = new TempVector[mx.Length];
+        }
+
+        public long[][] Mx
+        {
+            get { return GetMx(); }
+        }
+
+        private long[][] GetMx()
+        {
+            for (int i = 0; i < n; i++)
+                for (int j = 0; j < n; j++)
+                    mx[i][j] = tmx[i].Vr[j];
+            return mx;
+        }
+
+        public bool AddVector(TempVector tvr)
+        {
+            int i = 0;
+            while (tmx[i] != null)
+            {
+                if (tmx[i].Lidx == tvr.Lidx)
+                {
+                    int dg, rg;
+                    rg = Reduction(tmx[i].Litem, out dg);
+                    int dv, rv;
+                    rv = Reduction(tvr.Litem, out dv);
+
+                    if (rg > rv)
+                    {
+                        int x = (int)Math.Pow(2, rg - rv) * dg;
+
+                        int l = tvr.Vr.Length;
+                        long[] wr = new long[l];
+                        for (int j = 0; j < l; j++)
+                            wr[j] = (((dv * tmx[i].Vr[j]) - (x * tvr.Vr[j])) % m + m) % m;
+
+                        tmx[i] = tvr;
+
+                        TempVector twr = new TempVector(wr);
+                        if (twr.Lidx >= 0)
+                            AddVector(twr);
+
+                        return true;
+                    }
+
+                    return false;
+                }
+                else if (tmx[i].Lidx > tvr.Lidx) // toto nevim, zda muze nastat
+                {
+                    return false;
+                }
+                i++;
+            }
+            tmx[i] = tvr;
+            if ((tvr.Litem != 0) && ((tvr.Litem % 2) == 0))
+                AddEven(tvr);
+            return true;
+        }
+
+        private void AddEven(TempVector tvr)
+        {
+            int d, r;
+            r = Reduction(tvr.Litem, out d);
+
+            int x = (int)Math.Pow(2, w - r);
+
+            int l = tvr.Vr.Length;
+            long[] wr = new long[l];
+            for (int i = 0; i < l; i++)
+                wr[i] = (x * tvr.Vr[i]) % m;
+
+            TempVector twr = new TempVector(wr);
+            if (twr.Lidx >= 0)
+                AddVector(twr);
         }
     }
 }

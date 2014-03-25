@@ -9,28 +9,28 @@ namespace InterproceduralAnalysis
     {
         public void ComputeTest()
         {
-            int w = 8;
-            int n = 3;
-            long[] v = { 2, 4, 3 ,7};
-            long[,] a = { { 1, 167, 56, 4 }, { 0, 92, 116, 246 }, { 0, 133, 215, 15 }, { 0, 114, 38, 21 } };
-            long[,] b = { { 1, 4, 8, 0 }, { 0, 3, 0, 0 }, { 0, 249, 2, 0 }, { 0, 5, 252, 1 } };
+            int w = 3;
+            int n = 2;
+            long[][] a = { new long[] { 1, 5, 0 }, new long[] { 0, 4, 0 }, new long[] { 0, 3, 1 } }; // matice zmeny
+            long[][] ru = { new long[] { 1, 5, 0 }, new long[] { 0, 3, 1 }, new long[] { 0, 0, 4 } };
 
-            ComputeReduction cr = new ComputeReduction(w);
             ComputeMatrix cm = new ComputeMatrix(w, n);
-            
-            long[,] m = cm.GetIdentity();
-            this.PrintMatrix(m);
 
-            long[] x = cm.Multiplication(m, v);
-            this.Print(x);
+            long[][] rv = cm.GetIdentity(); // toto je W v uzlu V
+            this.PrintMatrix(rv);
 
-            this.PrintMatrix(a);
-            x = cm.Multiplication(a, v);
-            this.Print(x);
+            // tady je zaklad algoritmu
 
-            this.PrintMatrix(b);
-            m = cm.Multiplication(a, b);
-            this.PrintMatrix(m);
+            RMatrix rm = new RMatrix(w, n);
+            for (int i = 0; i <= n; i++)
+            {
+                long[] x = cm.Multiplication(a, rv[i]);
+                rm.AddVector(new TempVector(x));
+            }
+
+            // tady je konec algoritmu
+
+            PrintMatrix(rm.Mx);
 
             Console.ReadKey();
         }
@@ -44,13 +44,13 @@ namespace InterproceduralAnalysis
             Console.WriteLine();
         }
 
-        private void PrintMatrix(long[,] m)
+        private void PrintMatrix(long[][] m)
         {
-            for (int j = 0; j < m.GetLength(1); j++)
+            for (int j = 0; j < m[0].GetLength(0); j++)
             {
                 for (int i = 0; i < m.GetLength(0); i++)
                 {
-                    Console.Write("{0} ", m[i, j]);
+                    Console.Write("{0} ", m[i][j]);
                 }
                 Console.WriteLine();
             }
