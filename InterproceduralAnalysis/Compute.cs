@@ -201,6 +201,8 @@ namespace InterproceduralAnalysis
 
         public bool AddVector(TempVector tvr)
         {
+            TempVector tmpv = tvr; // potrebujeme uchovat informaci o hodnotach puvodne vkladaneho vektoru
+            bool change = false;  // potrebujeme sledovat, jestli doslo k vlozeni nejakeho vektoru
             int i = 0;
             while (tmx[i] != null)
             {
@@ -213,23 +215,34 @@ namespace InterproceduralAnalysis
 
                     if (rg > rv)
                     {
-                        int x = (int)Math.Pow(2, rg - rv) * dg;
+                        TempVector tmpx = tmx[i];
+                        tmx[i] = tvr; 
+                        change = true; // byla provedena zmena
+                        tvr = tmpx;
+                        
+                        int tmp = dg;
+                        dg = dv;
+                        dv = tmp;
 
-                        int l = tvr.Vr.Length;
-                        long[] wr = new long[l];
-                        for (int j = 0; j < l; j++)
-                            wr[j] = (((dv * tmx[i].Vr[j]) - (x * tvr.Vr[j])) % m + m) % m;
-
-                        tmx[i] = tvr;
-
-                        TempVector twr = new TempVector(wr);
-                        if (twr.Lidx >= 0)
-                            AddVector(twr);
-
-                        return true;
+                        tmp = rg;
+                        rg = rv;
+                        rv = tmp;
+                        
                     }
 
-                    return false;
+                    // univerzalni vzorec pro pripad rg <= rv (proto ta zmena znaceni)
+                    int x = (int)Math.Pow(2, rv - rg) * dv;
+
+                    int l = tvr.Vr.Length;
+                    long[] wr = new long[l];
+                    for (int j = 0; j < l; j++)
+                        wr[j] = (((dg * tvr.Vr[j]) - (x * tmx[i].Vr[j])) % m + m) % m;
+
+                    TempVector twr = new TempVector(wr);
+                    if (twr.Lidx >= 0)
+                        AddVector(twr);
+
+                    return true;
                 }
                 else if (tmx[i].Lidx > tvr.Lidx) // toto nevim, zda muze nastat
                 {
@@ -238,8 +251,16 @@ namespace InterproceduralAnalysis
                 i++;
             }
             tmx[i] = tvr;
+            change = true;
             if ((tvr.Litem != 0) && ((tvr.Litem % 2) == 0))
                 AddEven(tvr);
+
+            if (change == true)
+            {
+                // toto znamena, ze puvodni vektor tvr (ulozeny do promenne tmpv) zpusobil v danem uzlu zmenu v mnozine vektoru
+                // proto => queueW.Add(tmpv)
+            }
+
             return true;
         }
 

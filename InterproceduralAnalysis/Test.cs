@@ -7,7 +7,7 @@ namespace InterproceduralAnalysis
 {
     class Test
     {
-        public void ComputeTest()
+        public void ComputeTest(List<long[]> queueW)
         {
             int w = 3;
             int n = 2;
@@ -16,8 +16,11 @@ namespace InterproceduralAnalysis
 
             ComputeMatrix cm = new ComputeMatrix(w, n);
 
-            long[][] rv = cm.GetIdentity(); // toto je W v uzlu V
+            long[][] rv = cm.GetIdentity(); // toto je W v uzlu V 
             this.PrintMatrix(rv);
+            queueW.Add(rv[0]);
+            queueW.Add(rv[1]);
+            queueW.Add(rv[2]); //jen doufam, ze jsem tam vlozila sloupce a ne radky:)
 
             // tady je zaklad algoritmu
 

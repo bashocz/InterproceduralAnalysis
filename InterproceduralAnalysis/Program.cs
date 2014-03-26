@@ -27,8 +27,9 @@ namespace InterproceduralAnalysis
 
             if (test)
             {
+                List<long[]> queueW = new List<long[]>();
                 Test t = new Test();
-                t.ComputeTest();
+                t.ComputeTest(queueW);
             }
 
             if (programFile == null)
