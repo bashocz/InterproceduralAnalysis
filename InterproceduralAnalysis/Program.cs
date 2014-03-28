@@ -25,13 +25,6 @@ namespace InterproceduralAnalysis
             printSA = false;
             test = true;
 
-            if (test)
-            {
-                List<long[]> queueW = new List<long[]>();
-                Test t = new Test();
-                t.ComputeTest(queueW);
-            }
-
             if (programFile == null)
             {
                 Console.WriteLine("Parametr 'programFile' je povinny.");
@@ -71,6 +64,12 @@ namespace InterproceduralAnalysis
 
             GraphGenerator gg = new GraphGenerator();
             gg.CreateGraph(prg);
+
+            if (test)
+            {
+                Test t = new Test();
+                t.ComputeTest(prg);
+            }
 
             Console.ReadKey();
             return 0;

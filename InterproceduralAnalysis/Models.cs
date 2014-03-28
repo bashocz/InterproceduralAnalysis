@@ -213,6 +213,8 @@ namespace InterproceduralAnalysis
             //Vector = new int[size];
         }
 
+        public List<long[]> GeneratorSet { get; set; }
+
         public IaEdge Next { get; set; } // for all statements
 
         public IaEdge IsTrue { get; set; } // for if statement
@@ -221,9 +223,35 @@ namespace InterproceduralAnalysis
 
     class IaEdge
     {
+        public List<long[][]> MatrixSet { get; set; }
+
         public BaseAst Ast { get; set; }
 
         public IaNode From { get; set; }
         public IaNode To { get; set; }
+    }
+
+    class QItem
+    {
+        public IaNode Node { get; set; }
+        public long[] Vector { get; set; }
+
+        public QItem(IaNode node, long[] vector)
+        {
+            this.Node = node;
+            this.Vector = vector;
+        }
+    }
+
+    class FncItem
+    {
+        public string FncName { get; set; }
+        public IaNode Node { get; set; }
+
+        public FncItem(string fncName, IaNode node)
+        {
+            this.FncName = fncName;
+            this.Node = node;
+        }
     }
 }

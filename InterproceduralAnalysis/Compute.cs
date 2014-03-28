@@ -97,14 +97,14 @@ namespace InterproceduralAnalysis
             return wr;
         }
 
-        public long[][] Multiplication(long[][] mx, long[][] nx)
+        public long[][] Multiplication(long[][] left, long[][] right)
         {
-            int z = mx.Length;
-            if (z != nx[0].Length)
+            int z = left.Length;
+            if (z != right[0].Length)
                 throw new ApplicationException();
 
-            int k = nx.Length;
-            int l = mx[0].Length;
+            int k = right.Length;
+            int l = left[0].Length;
             long[][] r = GetMArray(k, l);
 
             for (int i = 0; i < k; i++)
@@ -113,7 +113,7 @@ namespace InterproceduralAnalysis
                 {
                     long sum = 0;
                     for (int a = 0; a < k; a++)
-                        sum += mx[a][j] * nx[i][a];
+                        sum += left[a][j] * right[i][a];
                     r[i][j] = sum;
                 }
             }
@@ -124,9 +124,42 @@ namespace InterproceduralAnalysis
         private long[][] GetMArray(int k, int l)
         {
             long[][] mx = new long[k][];
+         
             for (int i = 0; i < l; i++)
                 mx[i] = new long[l];
             return mx;
+        }
+
+        public long[] ConvertMatrixToVector(long[][] matrix)
+        {
+            int k = matrix[0].Length;
+            int l = matrix[1].Length;
+            long[] vector = new long[k*l];
+
+            for (int i = 0; i < k; i++)
+            {
+                for (int j = 0; j < l; j++)
+                {
+                    vector[j + i * l] = matrix[i][j];
+                }
+            }
+
+            return vector;
+        }
+
+        public long[][] ConvertVectorToMatrix(long[] vector)
+        {
+            long[][] matrix = new long[n][];
+
+            for (int i = 0; i < n; i++)
+            {
+                for (int j = 0; j < n; j++)
+                {
+                    matrix[i][j] = vector[j + i * n];
+                }
+            }
+
+            return matrix;
         }
     }
 
@@ -163,7 +196,7 @@ namespace InterproceduralAnalysis
             get { return li; }
         }
 
-        public long Litem
+        public long Lentry   // jen jsem to prejmenovala dle terminologie toho clanku
         {
             get
             {
@@ -209,15 +242,19 @@ namespace InterproceduralAnalysis
                 if (tmx[i].Lidx == tvr.Lidx)
                 {
                     int dg, rg;
-                    rg = Reduction(tmx[i].Litem, out dg);
+                    rg = Reduction(tmx[i].Lentry, out dg);
                     int dv, rv;
-                    rv = Reduction(tvr.Litem, out dv);
+                    rv = Reduction(tvr.Lentry, out dv);
 
                     if (rg > rv)
                     {
                         TempVector tmpx = tmx[i];
                         tmx[i] = tvr; 
+                        
                         change = true; // byla provedena zmena
+                        if ((tvr.Lentry != 0) && ((tvr.Lentry % 2) == 0))
+                            AddEven(tvr);
+                        
                         tvr = tmpx;
                         
                         int tmp = dg;
@@ -252,7 +289,7 @@ namespace InterproceduralAnalysis
             }
             tmx[i] = tvr;
             change = true;
-            if ((tvr.Litem != 0) && ((tvr.Litem % 2) == 0))
+            if ((tvr.Lentry != 0) && ((tvr.Lentry % 2) == 0))
                 AddEven(tvr);
 
             if (change == true)
@@ -267,7 +304,7 @@ namespace InterproceduralAnalysis
         private void AddEven(TempVector tvr)
         {
             int d, r;
-            r = Reduction(tvr.Litem, out d);
+            r = Reduction(tvr.Lentry, out d);
 
             int x = (int)Math.Pow(2, w - r);
 
