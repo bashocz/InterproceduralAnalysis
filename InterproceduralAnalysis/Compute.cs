@@ -12,9 +12,7 @@ namespace InterproceduralAnalysis
         private readonly int prime;
         private readonly int[] r_arr;
 
-        private readonly LeadVector[] g_act;
-
-        private Queue<WItem> w_queue;
+        private Queue<QueueItem> w_queue;
 
         public InterproceduralAnalyzer(int w, int n)
         {
@@ -28,9 +26,7 @@ namespace InterproceduralAnalysis
             prime = GetPrime(var_w);
             r_arr = GetRArray(var_w, prime);
 
-            g_act = new LeadVector[var_n];
-
-            w_queue = new Queue<WItem>();
+            w_queue = new Queue<QueueItem>();
         }
 
         private int GetPrime(int w)
@@ -173,7 +169,7 @@ namespace InterproceduralAnalysis
         //    tmx = new TempVector[mx.Length];
         //}
 
-        private void RemoveVector(int ri)
+        private void RemoveVector(LeadVector[] g_act, int ri)
         {
             int i = ri;
             while (i < (var_n - 1) && (g_act[i + 1] != null)) // pri mazani vektoru, je treba posunout vsechny vektory zprava o 1 pozici
@@ -184,7 +180,7 @@ namespace InterproceduralAnalysis
             g_act[i] = null; // posledni vektor je null -> konec G
         }
 
-        private void InsertVector(LeadVector vector, int ii)
+        private void InsertVector(LeadVector[] g_act, int ii, LeadVector vector)
         {
             if (g_act[ii] != null)
             {
@@ -208,7 +204,7 @@ namespace InterproceduralAnalysis
             g_act[ii] = vector; // jednoduse pridani vektoru na konec :-)
         }
 
-        private void AddEven(LeadVector tvr)
+        private void AddEven(LeadVector[] g_act, LeadVector tvr)
         {
             int r;
             long d;
@@ -223,10 +219,10 @@ namespace InterproceduralAnalysis
 
             LeadVector twr = new LeadVector(wr);
             if (twr.Lidx >= 0)
-                AddVector(twr);
+                AddVector(g_act, twr);
         }
 
-        private bool AddVector(LeadVector tvr)
+        private bool AddVector(LeadVector[] g_act, LeadVector tvr)
         {
             int i = 0;
 
@@ -240,7 +236,7 @@ namespace InterproceduralAnalysis
             if (g_act[i] == null) // pridat vektor na konec G
             {
                 if ((tvr.Lentry != 0) && ((tvr.Lentry % 2) == 0))
-                    AddEven(tvr);
+                    AddEven(g_act, tvr);
 
                 g_act[i] = tvr;
 
@@ -258,13 +254,13 @@ namespace InterproceduralAnalysis
                 if (rg > rv)
                 {
                     LeadVector tmpx = g_act[i];
-                    RemoveVector(i);
+                    RemoveVector(g_act, i);
 
                     change = true; // byla provedena zmena
                     if ((tvr.Lentry != 0) && ((tvr.Lentry % 2) == 0))
-                        AddEven(tvr);
+                        AddEven(g_act, tvr);
 
-                    InsertVector(tvr, i);
+                    InsertVector(g_act, i, tvr);
 
                     tvr = tmpx;
 
@@ -288,117 +284,68 @@ namespace InterproceduralAnalysis
 
                 LeadVector twr = new LeadVector(wr);
                 if (twr.Lidx >= 0)
-                    change |= AddVector(twr);
+                    change |= AddVector(g_act, twr);
 
                 return change;
             }
             else if (g_act[i].Lidx > tvr.Lidx)
             {
-                InsertVector(tvr, i);
+                InsertVector(g_act, i, tvr);
                 return true;
             }
 
             return false;
         }
 
-        private void AddIdentityVectors(Queue<WItem> w_queue, IaNode node)
+        private void AddIdentityVectors(Queue<QueueItem> w_queue, IaNode node)
         {
+            long[][] id = GetIdentity();
             for (int i = 0; i < var_n; i++)
-                w_queue.Enqueue(new WItem { Node = node, Vector = new LeadVector(node.GeneratorSet[i]) });
+                w_queue.Enqueue(new QueueItem { Node = node, Vector = new LeadVector(id[i]) });
+        }
+
+        public void CreateEmptyG(ProgramAst prg)
+        {
+            foreach (IaNode node in prg.Graph.Values)
+            {
+                Queue<IaNode> q = new Queue<IaNode>();
+                q.Enqueue(node);
+                while (q.Count > 0)
+                {
+                    IaNode n = q.Dequeue();
+                    n.GeneratorSet = new LeadVector[var_n];
+                    foreach (IaEdge edge in n.Edges)
+                        q.Enqueue(edge.To);
+                }
+            }
         }
 
         public void Analyze(ProgramAst prg)
         {
-            IaNode first = prg.Graph["main"]; // pro pokusy to ted staci :-)... pak se to musi upravit
-            first.GeneratorSet = GetIdentity();
+            CreateEmptyG(prg);
+            IaNode first = prg.Graph["main"]; // pro pokusy to ted staci :-)... pak se to musi rozsirit i na inicializovane VAR
             AddIdentityVectors(w_queue, first);
 
             while (w_queue.Count > 0)
             {
-                WItem pair = w_queue.Dequeue();
+                QueueItem pair = w_queue.Dequeue();
 
-                // zde by se mela vzit matice G ze vstupniho uzlu!!!
-
-                // tak ty hrany budu muset taky upravit... prozatim vim, ze je tam pouze hrana Next s jednou matici prechodu A
-                // tady musi byt smycka pro pruchod vsemi hranami vystupujicimi ze vstupniho uzlu a vsemi maticemi na hrane
-                long[][] a_mtx = pair.Node.Next.MatrixSet[0];
-
-                long[] xi = MatrixMultiVector(a_mtx, pair.Vector.Vr);
-                LeadVector x = new LeadVector(xi);
-                if (AddVector(x))
+                IaNode from = pair.Node;
+                // zde musi byt kontrola, zda se nejedna o volani funkce... pokud ano, je treba pridat hranu do W
+                foreach (IaEdge edge in from.Edges)
                 {
-                    w_queue.Enqueue(new WItem { Node = pair.Node, Vector = x });
+                    IaNode to = edge.To;
+
+                    foreach (long[][] a_mtx in edge.MatrixSet)
+                    {
+                        long[] xi = MatrixMultiVector(a_mtx, pair.Vector.Vr);
+                        LeadVector x = new LeadVector(xi);
+                        if (AddVector(to.GeneratorSet, x))
+                        {
+                            w_queue.Enqueue(new QueueItem { Node = pair.Node, Vector = x });
+                        }
+                    }
                 }
-
-                // zde by se mela ulozit matice G do vystupniho uzlu
-
-                // zde smycky budou koncit
-            }
-        }
-
-        // pro debugovaci tisk na obrazovku... bude smazano
-
-        public long[][] Mx
-        {
-            get { return GetMx(); }
-        }
-
-        private long[][] GetMx()
-        {
-            long[][] mx = GetMArray(var_n, var_n);
-            for (int i = 0; i < var_n; i++)
-                for (int j = 0; j < var_n; j++)
-                    mx[i][j] = g_act[i].Vr[j];
-            return mx;
-        }
-    }
-
-    class WItem
-    {
-        public IaNode Node { get; set; }
-        public LeadVector Vector { get; set; }
-    }
-
-    class LeadVector
-    {
-        private readonly long[] vr;
-        private readonly int li;
-
-        public LeadVector(long[] vr)
-        {
-            this.vr = vr;
-            li = GetLeadIndex(vr);
-        }
-
-        private int GetLeadIndex(long[] vr)
-        {
-            int k = vr.Length, li = -1;
-            for (int i = 0; i < k; i++)
-                if (vr[i] != 0)
-                {
-                    li = i;
-                    break;
-                }
-            return li;
-        }
-
-        public long[] Vr
-        {
-            get { return vr; }
-        }
-
-        public int Lidx
-        {
-            get { return li; }
-        }
-
-        public long Lentry   // jen jsem to prejmenovala dle terminologie toho clanku
-        {
-            get
-            {
-                if ((li >= 0) && (li < vr.Length))
-                    return vr[li];
-                return 0;
             }
         }
     }

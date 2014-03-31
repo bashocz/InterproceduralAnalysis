@@ -206,12 +206,25 @@ namespace InterproceduralAnalysis
 
     class IaNode
     {
-        public long[][] GeneratorSet { get; set; }
+        public LeadVector[] GeneratorSet { get; set; }
 
         public IaEdge Next { get; set; } // for all statements
 
         public IaEdge IsTrue { get; set; } // for if statement
         public IaEdge IsFalse { get; set; } // for if statement
+
+        public IEnumerable<IaEdge> Edges
+        {
+            get
+            {
+                if (IsTrue != null)
+                    yield return IsTrue;
+                if (IsFalse != null)
+                    yield return IsFalse;
+                if (Next != null)
+                    yield return Next;
+            }
+        }
     }
 
     class IaEdge
@@ -229,15 +242,53 @@ namespace InterproceduralAnalysis
         public IaNode To { get; set; }
     }
 
-    class QItem
+    class QueueItem
     {
         public IaNode Node { get; set; }
-        public long[] Vector { get; set; }
+        public LeadVector Vector { get; set; }
+    }
 
-        public QItem(IaNode node, long[] vector)
+    class LeadVector
+    {
+        private readonly long[] vr;
+        private readonly int li;
+
+        public LeadVector(long[] vr)
         {
-            this.Node = node;
-            this.Vector = vector;
+            this.vr = vr;
+            li = GetLeadIndex(vr);
+        }
+
+        private int GetLeadIndex(long[] vr)
+        {
+            int k = vr.Length, li = -1;
+            for (int i = 0; i < k; i++)
+                if (vr[i] != 0)
+                {
+                    li = i;
+                    break;
+                }
+            return li;
+        }
+
+        public long[] Vr
+        {
+            get { return vr; }
+        }
+
+        public int Lidx
+        {
+            get { return li; }
+        }
+
+        public long Lentry   // jen jsem to prejmenovala dle terminologie toho clanku
+        {
+            get
+            {
+                if ((li >= 0) && (li < vr.Length))
+                    return vr[li];
+                return 0;
+            }
         }
     }
 

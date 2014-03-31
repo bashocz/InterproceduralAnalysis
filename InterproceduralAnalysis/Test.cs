@@ -8,7 +8,6 @@ namespace InterproceduralAnalysis
 {
     class Test
     {
-        private Queue<QItem> queueW = new Queue<QItem>();
         private int w = 3;
         private int n = 2;
         public void ComputeTest(ProgramAst program)
@@ -18,10 +17,11 @@ namespace InterproceduralAnalysis
             long[][] ru = { new long[] { 1, 5, 0 }, new long[] { 0, 3, 1 }, new long[] { 0, 0, 4 } }; // matice vystupniho uzlu (pro kontrolu vypoctu)
 
             IaNode first = new IaNode();
+            IaNode second = new IaNode();
             IaEdge edge = new IaEdge();
             edge.MatrixSet.Add(a);
             edge.From = first;
-            edge.To = new IaNode();
+            edge.To = second;
             first.Next = edge;
 
             ProgramAst prg = new ProgramAst();
@@ -34,7 +34,7 @@ namespace InterproceduralAnalysis
 
 
 
-            PrintMatrix(rm.Mx);
+            PrintMatrix(second.GeneratorSet);
 
             Console.ReadKey();
 
@@ -136,13 +136,24 @@ namespace InterproceduralAnalysis
             Console.WriteLine();
         }
 
-        private void PrintMatrix(long[][] m)
+        private void PrintMatrix(LeadVector[] m)
         {
-            for (int j = 0; j < m[0].GetLength(0); j++)
+            if (m[0] == null)
             {
-                for (int i = 0; i < m.GetLength(0); i++)
+                Console.WriteLine("null");
+                return;
+            }
+
+            int k = m.Length;
+            int l = m[0].Vr.Length;
+            
+            for (int j = 0; j < l; j++)
+            {
+                int i = 0;
+                while ((i < k) && (m[i] != null))
                 {
-                    Console.Write("{0} ", m[i][j]);
+                    Console.Write("{0} ", m[i].Vr[j]);
+                    i++;
                 }
                 Console.WriteLine();
             }
