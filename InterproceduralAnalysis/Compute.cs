@@ -173,6 +173,41 @@ namespace InterproceduralAnalysis
         //    tmx = new TempVector[mx.Length];
         //}
 
+        private void RemoveVector(int ri)
+        {
+            int i = ri;
+            while (i < (var_n - 1) && (g_act[i + 1] != null)) // pri mazani vektoru, je treba posunout vsechny vektory zprava o 1 pozici
+            {
+                g_act[i] = g_act[i + 1];
+                i++;
+            }
+            g_act[i] = null; // posledni vektor je null -> konec G
+        }
+
+        private void InsertVector(LeadVector vector, int ii)
+        {
+            if (g_act[ii] != null)
+            {
+                if (g_act[ii].Lidx < vector.Lidx)
+                {
+                    int i = var_n - 2;
+                    while (i >= ii)
+                    {
+                        g_act[i + 1] = g_act[i];
+                        i--;
+                    }
+                    g_act[ii] = vector;
+                    return;
+                }
+                else
+                {
+                    // tady to chce asi vyjimku, podle me to nemuze nastat!!!
+                    throw new ApplicationException();
+                }
+            }
+            g_act[ii] = vector; // jednoduse pridani vektoru na konec :-)
+        }
+
         private void AddEven(LeadVector tvr)
         {
             int r;
@@ -197,65 +232,73 @@ namespace InterproceduralAnalysis
 
             while (g_act[i] != null)
             {
-                if (g_act[i].Lidx == tvr.Lidx)
-                {
-                    bool change = false;  // potrebujeme sledovat, jestli doslo k vlozeni nejakeho vektoru
-
-                    int rv, rg;
-                    long dv, dg;
-                    rg = Reduction(g_act[i].Lentry, out dg);
-                    rv = Reduction(tvr.Lentry, out dv);
-
-                    if (rg > rv)
-                    {
-                        LeadVector tmpx = g_act[i];
-                        g_act[i] = tvr;
-
-                        change = true; // byla provedena zmena
-                        if ((tvr.Lentry != 0) && ((tvr.Lentry % 2) == 0))
-                            AddEven(tvr);
-
-                        tvr = tmpx;
-
-                        long td = dg;
-                        dg = dv;
-                        dv = td;
-
-                        int tr = rg;
-                        rg = rv;
-                        rv = tr;
-
-                    }
-
-                    // univerzalni vzorec pro pripad rg <= rv (proto ta zmena znaceni)
-                    int x = (int)Math.Pow(2, rv - rg) * (int)dv;
-
-                    int l = tvr.Vr.Length;
-                    long[] wr = new long[l];
-                    for (int j = 0; j < l; j++)
-                        wr[j] = (((dg * tvr.Vr[j]) - (x * g_act[i].Vr[j])) % var_m + var_m) % var_m;
-
-                    LeadVector twr = new LeadVector(wr);
-                    if (twr.Lidx >= 0)
-                        change |= AddVector(twr);
-
-                    return change;
-                }
-                else if (g_act[i].Lidx > tvr.Lidx) // toto nevim, zda muze nastat
-                {
-                    return false;
-                }
+                if (g_act[i].Lidx >= tvr.Lidx)
+                    break;
                 i++;
             }
 
-            // pridani vektoru na konec G
+            if (g_act[i] == null) // pridat vektor na konec G
+            {
+                if ((tvr.Lentry != 0) && ((tvr.Lentry % 2) == 0))
+                    AddEven(tvr);
 
-            if ((tvr.Lentry != 0) && ((tvr.Lentry % 2) == 0))
-                AddEven(tvr);
+                g_act[i] = tvr;
 
-            g_act[i] = tvr;
+                return true;
+            }
+            else if (g_act[i].Lidx == tvr.Lidx)
+            {
+                bool change = false;  // potrebujeme sledovat, jestli doslo k vlozeni nejakeho vektoru
 
-            return true;
+                int rv, rg;
+                long dv, dg;
+                rg = Reduction(g_act[i].Lentry, out dg);
+                rv = Reduction(tvr.Lentry, out dv);
+
+                if (rg > rv)
+                {
+                    LeadVector tmpx = g_act[i];
+                    RemoveVector(i);
+
+                    change = true; // byla provedena zmena
+                    if ((tvr.Lentry != 0) && ((tvr.Lentry % 2) == 0))
+                        AddEven(tvr);
+
+                    InsertVector(tvr, i);
+
+                    tvr = tmpx;
+
+                    long td = dg;
+                    dg = dv;
+                    dv = td;
+
+                    int tr = rg;
+                    rg = rv;
+                    rv = tr;
+
+                }
+
+                // univerzalni vzorec pro pripad rg <= rv (proto ta zmena znaceni)
+                int x = (int)Math.Pow(2, rv - rg) * (int)dv;
+
+                int l = tvr.Vr.Length;
+                long[] wr = new long[l];
+                for (int j = 0; j < l; j++)
+                    wr[j] = (((dg * tvr.Vr[j]) - (x * g_act[i].Vr[j])) % var_m + var_m) % var_m;
+
+                LeadVector twr = new LeadVector(wr);
+                if (twr.Lidx >= 0)
+                    change |= AddVector(twr);
+
+                return change;
+            }
+            else if (g_act[i].Lidx > tvr.Lidx)
+            {
+                InsertVector(tvr, i);
+                return true;
+            }
+
+            return false;
         }
 
         private void AddIdentityVectors(Queue<WItem> w_queue, IaNode node)
