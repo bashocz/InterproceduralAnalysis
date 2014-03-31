@@ -206,14 +206,7 @@ namespace InterproceduralAnalysis
 
     class IaNode
     {
-        //public int[] Vector { get; private set; }
-
-        public IaNode()//(int size)
-        {
-            //Vector = new int[size];
-        }
-
-        public List<long[]> GeneratorSet { get; set; }
+        public long[][] GeneratorSet { get; set; }
 
         public IaEdge Next { get; set; } // for all statements
 
@@ -223,7 +216,12 @@ namespace InterproceduralAnalysis
 
     class IaEdge
     {
-        public List<long[][]> MatrixSet { get; set; }
+        public IaEdge()
+        {
+            MatrixSet = new List<long[][]>();
+        }
+
+        public List<long[][]> MatrixSet { get; private set; }
 
         public BaseAst Ast { get; set; }
 

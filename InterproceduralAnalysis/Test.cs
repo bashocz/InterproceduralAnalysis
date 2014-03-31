@@ -14,23 +14,25 @@ namespace InterproceduralAnalysis
         public void ComputeTest(ProgramAst program)
         {
             long[][] a = { new long[] { 1, 5, 0 }, new long[] { 0, 4, 0 }, new long[] { 0, 3, 1 } }; // matice zmeny
-            long[][] ru = { new long[] { 1, 5, 0 }, new long[] { 0, 3, 1 }, new long[] { 0, 0, 4 } };
+            long[][] rv = { new long[] { 1, 0, 0 }, new long[] { 0, 1, 0 }, new long[] { 0, 0, 1 } }; // matice vstupniho uzlu
+            long[][] ru = { new long[] { 1, 5, 0 }, new long[] { 0, 3, 1 }, new long[] { 0, 0, 4 } }; // matice vystupniho uzlu (pro kontrolu vypoctu)
 
-            ComputeMatrix cm = new ComputeMatrix(w, n);
+            IaNode first = new IaNode();
+            IaEdge edge = new IaEdge();
+            edge.MatrixSet.Add(a);
+            edge.From = first;
+            edge.To = new IaNode();
+            first.Next = edge;
 
-            long[][] rv = cm.GetIdentity(); // toto je W v uzlu V 
-            this.PrintMatrix(rv);
+            ProgramAst prg = new ProgramAst();
+            prg.Graph.Add("main", first);
 
-            // tady je zaklad algoritmu
 
-            RMatrix rm = new RMatrix(w, n);
-            for (int i = 0; i <= n; i++)
-            {
-                long[] x = cm.Multiplication(a, rv[i]);
-                rm.AddVector(new TempVector(x));
-            }
 
-            // tady je konec algoritmu
+            InterproceduralAnalyzer rm = new InterproceduralAnalyzer(w, n);
+            rm.Analyze(prg);
+
+
 
             PrintMatrix(rm.Mx);
 
@@ -39,98 +41,89 @@ namespace InterproceduralAnalysis
 
             // pokus o sestaveni zmenovych matic funkci
 
-            long[] vector = cm.ConvertMatrixToVector(rv);  // prevod matice na vektor
-            foreach (KeyValuePair<string, IaNode> pair in program.Graph)
-            {
-                queueW.Enqueue(new QItem(pair.Value, vector));  //vlozeni vstupnich uzlu vsech funkci do fronty s prirazenou jednotkovou matici prevedenou na vektor
-            }
+            //long[] vector = cm.ConvertMatrixToVector(rv);  // prevod matice na vektor
+            //foreach (KeyValuePair<string, IaNode> pair in program.Graph)
+            //{
+            //    queueW.Enqueue(new QItem(pair.Value, vector));  //vlozeni vstupnich uzlu vsech funkci do fronty s prirazenou jednotkovou matici prevedenou na vektor
+            //}
 
         }
 
-        private List<FncItem> fncList = new List<FncItem>();
-        public void ComputeMatrixes(ProgramAst program)
-        {
-            List<long[][]> transformation = new List<long[][]>();
-            List<long[][]> changed = new List<long[][]>();
-            long[][] matrix;
-            long[][] nMatrix;
-            RMatrix rm = new RMatrix(w, n);
-            ComputeMatrix cm = new ComputeMatrix (w,n);
+        //private List<FncItem> fncList = new List<FncItem>();
+        //public void ComputeMatrixes(ProgramAst program)
+        //{
+        //    List<long[][]> transformation = new List<long[][]>();
+        //    List<long[][]> changed = new List<long[][]>();
+        //    long[][] matrix;
+        //    long[][] nMatrix;
+        //    RMatrix rm = new RMatrix(w, n);
+        //    ComputeMatrix cm = new ComputeMatrix (w,n);
 
-            while (queueW.Count != 0)
-            {
-                QItem item = queueW.Dequeue();
-                matrix = cm.ConvertVectorToMatrix(item.Vector);
+        //    while (queueW.Count != 0)
+        //    {
+        //        QItem item = queueW.Dequeue();
+        //        matrix = cm.ConvertVectorToMatrix(item.Vector);
                 
-                IaEdge test = null; //pomocna hrana pro prvni podminku -> jak poznat, ze je v hrane volani funkce?
+        //        IaEdge test = null; //pomocna hrana pro prvni podminku -> jak poznat, ze je v hrane volani funkce?
 
-                if ((item.Node.Next == test) || (item.Node.IsTrue == test) || (item.Node.IsFalse == test)) // pokud jde o volani funkce
-                {
-                    /* 
-                     * do fncList ulozit identifikaci funkce, ktera je v hrane volana
-                     * a identifikaci uzlu, ze ktereho hrana vychazi
-                    */
-                }
-                    //pokud v hrane neni volani funkce
-                else if (item.Node.Next != null)
-                {
-                    transformation = item.Node.Next.MatrixSet;
-                    foreach (long[][] tMatrix in transformation)
-                    {
-                        changed.Add(cm.Multiplication(tMatrix, matrix));
-                    }
+        //        if ((item.Node.Next == test) || (item.Node.IsTrue == test) || (item.Node.IsFalse == test)) // pokud jde o volani funkce
+        //        {
+        //            /* 
+        //             * do fncList ulozit identifikaci funkce, ktera je v hrane volana
+        //             * a identifikaci uzlu, ze ktereho hrana vychazi
+        //            */
+        //        }
+        //            //pokud v hrane neni volani funkce
+        //        else if (item.Node.Next != null)
+        //        {
+        //            transformation = item.Node.Next.MatrixSet;
+        //            foreach (long[][] tMatrix in transformation)
+        //            {
+        //                changed.Add(cm.Multiplication(tMatrix, matrix));
+        //            }
 
-                }
-                else if (item.Node.IsTrue != null)
-                {
-                    transformation = item.Node.IsTrue.MatrixSet;
-                    foreach (long[][] tMatrix in transformation)
-                    {
-                        changed.Add(cm.Multiplication(tMatrix, matrix));
-                    }
+        //        }
+        //        else if (item.Node.IsTrue != null)
+        //        {
+        //            transformation = item.Node.IsTrue.MatrixSet;
+        //            foreach (long[][] tMatrix in transformation)
+        //            {
+        //                changed.Add(cm.Multiplication(tMatrix, matrix));
+        //            }
 
-                }
-                else if (item.Node.IsFalse != null)
-                {
-                    transformation = item.Node.IsFalse.MatrixSet;
-                    foreach (long[][] tMatrix in transformation)
-                    {
-                        changed.Add(cm.Multiplication(tMatrix, matrix));
-                    }
+        //        }
+        //        else if (item.Node.IsFalse != null)
+        //        {
+        //            transformation = item.Node.IsFalse.MatrixSet;
+        //            foreach (long[][] tMatrix in transformation)
+        //            {
+        //                changed.Add(cm.Multiplication(tMatrix, matrix));
+        //            }
 
-                }
-                else if ((item.Node.Next == null) && (item.Node.IsTrue == null) && (item.Node.IsFalse != null))
-                {
-                    /* vystupni uzel => distribuce na volajici funkce
-                     * nacist seznam uzlu z fncList, ktere byly ulozeny s identifikaci funkce, ve ktere je item.Node
-                     * a pro kazdy uzel:
-                    */
+        //        }
+        //        else if ((item.Node.Next == null) && (item.Node.IsTrue == null) && (item.Node.IsFalse != null))
+        //        {
+        //            /* vystupni uzel => distribuce na volajici funkce
+        //             * nacist seznam uzlu z fncList, ktere byly ulozeny s identifikaci funkce, ve ktere je item.Node
+        //             * a pro kazdy uzel:
+        //            */
                     
-                    IaNode hlpNode = new IaNode();// pomocny uzel zastupujici uzly, ktere volaly funkci
+        //            IaNode hlpNode = new IaNode();// pomocny uzel zastupujici uzly, ktere volaly funkci
 
-                    foreach (long[] vector in hlpNode.GeneratorSet)
-                    {
-                        nMatrix = cm.ConvertVectorToMatrix(vector);
-                        changed.Add(cm.Multiplication(matrix,nMatrix));
-                    }
-                }
+        //            foreach (long[] vector in hlpNode.GeneratorSet)
+        //            {
+        //                nMatrix = cm.ConvertVectorToMatrix(vector);
+        //                changed.Add(cm.Multiplication(matrix,nMatrix));
+        //            }
+        //        }
 
-                foreach (long[][] chMatrix in changed)
-                {
-                    TempVector vector = new TempVector(cm.ConvertMatrixToVector(chMatrix));
-                    rm.AddVector(vector);
-                }
-            }
-        }
-
-        private List<long[][]> ComputeChanges(List<long[][]> transformation, long[] vector)
-        {
-            List<long[][]> set = new List<long[][]>();
-            ComputeMatrix cm = new ComputeMatrix(w, n);
-            
-
-            return set;
-        }
+        //        foreach (long[][] chMatrix in changed)
+        //        {
+        //            TempVector vector = new TempVector(cm.ConvertMatrixToVector(chMatrix));
+        //            rm.AddVector(vector);
+        //        }
+        //    }
+        //}
 
         // konec - pokus o sestaveni matic
 

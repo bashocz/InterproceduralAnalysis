@@ -5,24 +5,32 @@ using System.Text;
 
 namespace InterproceduralAnalysis
 {
-    class ComputeMatrix
+    class InterproceduralAnalyzer
     {
-        protected readonly int w, n;
-        protected readonly long m;
-        private readonly int p;
-        private readonly int[] a;
+        protected readonly int var_w, var_n;
+        protected readonly long var_m;
+        private readonly int prime;
+        private readonly int[] r_arr;
 
-        public ComputeMatrix(int w, int n)
+        private readonly LeadVector[] g_act;
+
+        private Queue<WItem> w_queue;
+
+        public InterproceduralAnalyzer(int w, int n)
         {
             if ((w <= 0) || (n < 0))
                 throw new ApplicationException();
 
-            this.w = w;
-            this.m = (long)Math.Pow(2, w);
-            this.n = n + 1; // velikost matice G... +1 pro konstanty
+            this.var_w = w;
+            this.var_m = (long)Math.Pow(2, w);
+            this.var_n = n + 1; // velikost matice G... +1 pro konstanty
 
-            p = GetPrime(w);
-            a = GetRArray(w, p);
+            prime = GetPrime(var_w);
+            r_arr = GetRArray(var_w, prime);
+
+            g_act = new LeadVector[var_n];
+
+            w_queue = new Queue<WItem>();
         }
 
         private int GetPrime(int w)
@@ -57,47 +65,52 @@ namespace InterproceduralAnalysis
             return a;
         }
 
-        public int Reduction(long nr, out int d)
+        private long[][] GetMArray(int k, int l)
         {
-            if ((nr % 2) != 0)
+            long[][] mx = new long[k][];
+
+            for (int i = 0; i < l; i++)
+                mx[i] = new long[l];
+            return mx;
+        }
+
+        private int Reduction(long nr, out long d)
+        {
+            if ((nr % 2) != 0) // odd number
             {
-                d = (int)nr;
+                d = nr;
                 return 0;
             }
-            int r = a[(nr & (-nr)) % p];
-            d = (int)(nr >> r);
+
+            int r = r_arr[(nr & (-nr)) % prime];
+            d = (nr >> r);
             return r;
         }
 
-        public long[][] GetEmpty()
+        private long[][] GetIdentity()
         {
-            return GetMArray(n, n);
-        }
-
-        public long[][] GetIdentity()
-        {
-            long[][] mx = GetMArray(n, n);
-            for (int i = 0; i < n; i++)
+            long[][] mx = GetMArray(var_n, var_n);
+            for (int i = 0; i < var_n; i++)
                 mx[i][i] = 1;
             return mx;
         }
 
-        public long[] Multiplication(long[][] mx, long[] vr)
+        private long[] MatrixMultiVector(long[][] matrix, long[] vector)
         {
-            int z = mx.Length;
-            if (z != vr.Length)
+            int z = matrix.Length;
+            if (z != vector.Length)
                 throw new ApplicationException();
 
-            int l = mx[0].Length;
-            long[] wr = new long[l];
+            int l = matrix[0].Length;
+            long[] result = new long[l];
             for (int j = 0; j < l; j++)
                 for (int a = 0; a < z; a++)
-                    wr[j] += mx[a][j] * vr[a];
+                    result[j] += matrix[a][j] * vector[a];
 
-            return wr;
+            return result;
         }
 
-        public long[][] Multiplication(long[][] left, long[][] right)
+        private long[][] MatrixMultiMatrix(long[][] left, long[][] right)
         {
             int z = left.Length;
             if (z != right[0].Length)
@@ -105,7 +118,7 @@ namespace InterproceduralAnalysis
 
             int k = right.Length;
             int l = left[0].Length;
-            long[][] r = GetMArray(k, l);
+            long[][] result = GetMArray(k, l);
 
             for (int i = 0; i < k; i++)
             {
@@ -114,61 +127,201 @@ namespace InterproceduralAnalysis
                     long sum = 0;
                     for (int a = 0; a < k; a++)
                         sum += left[a][j] * right[i][a];
-                    r[i][j] = sum;
+                    result[i][j] = sum;
                 }
             }
 
-            return r;
+            return result;
         }
 
-        private long[][] GetMArray(int k, int l)
+        //public long[] ConvertMatrixToVector(long[][] matrix)
+        //{
+        //    int k = matrix[0].Length;
+        //    int l = matrix[1].Length;
+        //    long[] vector = new long[k*l];
+
+        //    for (int i = 0; i < k; i++)
+        //    {
+        //        for (int j = 0; j < l; j++)
+        //        {
+        //            vector[j + i * l] = matrix[i][j];
+        //        }
+        //    }
+
+        //    return vector;
+        //}
+
+        //public long[][] ConvertVectorToMatrix(long[] vector)
+        //{
+        //    long[][] matrix = new long[var_n][];
+
+        //    for (int i = 0; i < var_n; i++)
+        //    {
+        //        for (int j = 0; j < var_n; j++)
+        //        {
+        //            matrix[i][j] = vector[j + i * var_n];
+        //        }
+        //    }
+
+        //    return matrix;
+        //}
+
+        //public RMatrix(int w, int n)
+        //    : base(w, n)
+        //{
+        //    mx = GetEmpty();
+        //    tmx = new TempVector[mx.Length];
+        //}
+
+        private void AddEven(LeadVector tvr)
         {
-            long[][] mx = new long[k][];
-         
+            int r;
+            long d;
+            r = Reduction(tvr.Lentry, out d);
+
+            int x = (int)Math.Pow(2, var_w - r);
+
+            int l = tvr.Vr.Length;
+            long[] wr = new long[l];
             for (int i = 0; i < l; i++)
-                mx[i] = new long[l];
+                wr[i] = (x * tvr.Vr[i]) % var_m;
+
+            LeadVector twr = new LeadVector(wr);
+            if (twr.Lidx >= 0)
+                AddVector(twr);
+        }
+
+        private bool AddVector(LeadVector tvr)
+        {
+            int i = 0;
+
+            while (g_act[i] != null)
+            {
+                if (g_act[i].Lidx == tvr.Lidx)
+                {
+                    bool change = false;  // potrebujeme sledovat, jestli doslo k vlozeni nejakeho vektoru
+
+                    int rv, rg;
+                    long dv, dg;
+                    rg = Reduction(g_act[i].Lentry, out dg);
+                    rv = Reduction(tvr.Lentry, out dv);
+
+                    if (rg > rv)
+                    {
+                        LeadVector tmpx = g_act[i];
+                        g_act[i] = tvr;
+
+                        change = true; // byla provedena zmena
+                        if ((tvr.Lentry != 0) && ((tvr.Lentry % 2) == 0))
+                            AddEven(tvr);
+
+                        tvr = tmpx;
+
+                        long td = dg;
+                        dg = dv;
+                        dv = td;
+
+                        int tr = rg;
+                        rg = rv;
+                        rv = tr;
+
+                    }
+
+                    // univerzalni vzorec pro pripad rg <= rv (proto ta zmena znaceni)
+                    int x = (int)Math.Pow(2, rv - rg) * (int)dv;
+
+                    int l = tvr.Vr.Length;
+                    long[] wr = new long[l];
+                    for (int j = 0; j < l; j++)
+                        wr[j] = (((dg * tvr.Vr[j]) - (x * g_act[i].Vr[j])) % var_m + var_m) % var_m;
+
+                    LeadVector twr = new LeadVector(wr);
+                    if (twr.Lidx >= 0)
+                        change |= AddVector(twr);
+
+                    return change;
+                }
+                else if (g_act[i].Lidx > tvr.Lidx) // toto nevim, zda muze nastat
+                {
+                    return false;
+                }
+                i++;
+            }
+
+            // pridani vektoru na konec G
+
+            if ((tvr.Lentry != 0) && ((tvr.Lentry % 2) == 0))
+                AddEven(tvr);
+
+            g_act[i] = tvr;
+
+            return true;
+        }
+
+        private void AddIdentityVectors(Queue<WItem> w_queue, IaNode node)
+        {
+            for (int i = 0; i < var_n; i++)
+                w_queue.Enqueue(new WItem { Node = node, Vector = new LeadVector(node.GeneratorSet[i]) });
+        }
+
+        public void Analyze(ProgramAst prg)
+        {
+            IaNode first = prg.Graph["main"]; // pro pokusy to ted staci :-)... pak se to musi upravit
+            first.GeneratorSet = GetIdentity();
+            AddIdentityVectors(w_queue, first);
+
+            while (w_queue.Count > 0)
+            {
+                WItem pair = w_queue.Dequeue();
+
+                // zde by se mela vzit matice G ze vstupniho uzlu!!!
+
+                // tak ty hrany budu muset taky upravit... prozatim vim, ze je tam pouze hrana Next s jednou matici prechodu A
+                // tady musi byt smycka pro pruchod vsemi hranami vystupujicimi ze vstupniho uzlu a vsemi maticemi na hrane
+                long[][] a_mtx = pair.Node.Next.MatrixSet[0];
+
+                long[] xi = MatrixMultiVector(a_mtx, pair.Vector.Vr);
+                LeadVector x = new LeadVector(xi);
+                if (AddVector(x))
+                {
+                    w_queue.Enqueue(new WItem { Node = pair.Node, Vector = x });
+                }
+
+                // zde by se mela ulozit matice G do vystupniho uzlu
+
+                // zde smycky budou koncit
+            }
+        }
+
+        // pro debugovaci tisk na obrazovku... bude smazano
+
+        public long[][] Mx
+        {
+            get { return GetMx(); }
+        }
+
+        private long[][] GetMx()
+        {
+            long[][] mx = GetMArray(var_n, var_n);
+            for (int i = 0; i < var_n; i++)
+                for (int j = 0; j < var_n; j++)
+                    mx[i][j] = g_act[i].Vr[j];
             return mx;
-        }
-
-        public long[] ConvertMatrixToVector(long[][] matrix)
-        {
-            int k = matrix[0].Length;
-            int l = matrix[1].Length;
-            long[] vector = new long[k*l];
-
-            for (int i = 0; i < k; i++)
-            {
-                for (int j = 0; j < l; j++)
-                {
-                    vector[j + i * l] = matrix[i][j];
-                }
-            }
-
-            return vector;
-        }
-
-        public long[][] ConvertVectorToMatrix(long[] vector)
-        {
-            long[][] matrix = new long[n][];
-
-            for (int i = 0; i < n; i++)
-            {
-                for (int j = 0; j < n; j++)
-                {
-                    matrix[i][j] = vector[j + i * n];
-                }
-            }
-
-            return matrix;
         }
     }
 
-    class TempVector
+    class WItem
+    {
+        public IaNode Node { get; set; }
+        public LeadVector Vector { get; set; }
+    }
+
+    class LeadVector
     {
         private readonly long[] vr;
         private readonly int li;
 
-        public TempVector(long[] vr)
+        public LeadVector(long[] vr)
         {
             this.vr = vr;
             li = GetLeadIndex(vr);
@@ -204,118 +357,6 @@ namespace InterproceduralAnalysis
                     return vr[li];
                 return 0;
             }
-        }
-    }
-
-    class RMatrix : ComputeMatrix
-    {
-        private readonly TempVector[] tmx;
-        private readonly long[][] mx;
-
-        public RMatrix(int w, int n)
-            : base(w, n)
-        {
-            mx = GetEmpty();
-            tmx = new TempVector[mx.Length];
-        }
-
-        public long[][] Mx
-        {
-            get { return GetMx(); }
-        }
-
-        private long[][] GetMx()
-        {
-            for (int i = 0; i < n; i++)
-                for (int j = 0; j < n; j++)
-                    mx[i][j] = tmx[i].Vr[j];
-            return mx;
-        }
-
-        public bool AddVector(TempVector tvr)
-        {
-            TempVector tmpv = tvr; // potrebujeme uchovat informaci o hodnotach puvodne vkladaneho vektoru
-            bool change = false;  // potrebujeme sledovat, jestli doslo k vlozeni nejakeho vektoru
-            int i = 0;
-            while (tmx[i] != null)
-            {
-                if (tmx[i].Lidx == tvr.Lidx)
-                {
-                    int dg, rg;
-                    rg = Reduction(tmx[i].Lentry, out dg);
-                    int dv, rv;
-                    rv = Reduction(tvr.Lentry, out dv);
-
-                    if (rg > rv)
-                    {
-                        TempVector tmpx = tmx[i];
-                        tmx[i] = tvr; 
-                        
-                        change = true; // byla provedena zmena
-                        if ((tvr.Lentry != 0) && ((tvr.Lentry % 2) == 0))
-                            AddEven(tvr);
-                        
-                        tvr = tmpx;
-                        
-                        int tmp = dg;
-                        dg = dv;
-                        dv = tmp;
-
-                        tmp = rg;
-                        rg = rv;
-                        rv = tmp;
-                        
-                    }
-
-                    // univerzalni vzorec pro pripad rg <= rv (proto ta zmena znaceni)
-                    int x = (int)Math.Pow(2, rv - rg) * dv;
-
-                    int l = tvr.Vr.Length;
-                    long[] wr = new long[l];
-                    for (int j = 0; j < l; j++)
-                        wr[j] = (((dg * tvr.Vr[j]) - (x * tmx[i].Vr[j])) % m + m) % m;
-
-                    TempVector twr = new TempVector(wr);
-                    if (twr.Lidx >= 0)
-                        AddVector(twr);
-
-                    return true;
-                }
-                else if (tmx[i].Lidx > tvr.Lidx) // toto nevim, zda muze nastat
-                {
-                    return false;
-                }
-                i++;
-            }
-            tmx[i] = tvr;
-            change = true;
-            if ((tvr.Lentry != 0) && ((tvr.Lentry % 2) == 0))
-                AddEven(tvr);
-
-            if (change == true)
-            {
-                // toto znamena, ze puvodni vektor tvr (ulozeny do promenne tmpv) zpusobil v danem uzlu zmenu v mnozine vektoru
-                // proto => queueW.Add(tmpv)
-            }
-
-            return true;
-        }
-
-        private void AddEven(TempVector tvr)
-        {
-            int d, r;
-            r = Reduction(tvr.Lentry, out d);
-
-            int x = (int)Math.Pow(2, w - r);
-
-            int l = tvr.Vr.Length;
-            long[] wr = new long[l];
-            for (int i = 0; i < l; i++)
-                wr[i] = (x * tvr.Vr[i]) % m;
-
-            TempVector twr = new TempVector(wr);
-            if (twr.Lidx >= 0)
-                AddVector(twr);
         }
     }
 }
