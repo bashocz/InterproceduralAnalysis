@@ -215,7 +215,7 @@ namespace InterproceduralAnalysis
             int l = tvr.Vr.Length;
             long[] wr = new long[l];
             for (int i = 0; i < l; i++)
-                wr[i] = (x * tvr.Vr[i]) % var_m;
+                wr[i] = ((x * tvr.Vr[i]) % var_m + var_m) % var_m;
 
             LeadVector twr = new LeadVector(wr);
             if (twr.Lidx >= 0)
