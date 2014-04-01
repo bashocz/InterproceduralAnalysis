@@ -19,17 +19,10 @@ namespace InterproceduralAnalysis
         static int Main(string[] args)
         {
             //programName = args[0];
-            programFile = @"C:\Users\Míša\Documents\Visual Studio 2010\Projects\InterproceduralAnalysis\InterproceduralAnalysis\program.txt";
+            programFile = @"D:/projects/github/InterproceduralAnalysis/InterproceduralAnalysis/program.txt";
             //printLA = arg[1];
             printLA = false;
             printSA = false;
-            test = true;
-
-            if (test)
-            {
-                Test t = new Test();
-                t.ComputeTest(null);
-            }
 
             if (programFile == null)
             {
@@ -70,6 +63,12 @@ namespace InterproceduralAnalysis
 
             GraphGenerator gg = new GraphGenerator();
             gg.CreateGraph(prg);
+
+            int w = 8;
+            InterproceduralAnalyzer ia = new InterproceduralAnalyzer(w, prg.VarsDecl.Count);
+            ia.CreateTransitionMatrixes(prg);
+            ia.CreateGeneratorSets(prg);
+            ia.PrintLastG(prg);
 
             Console.ReadKey();
             return 0;

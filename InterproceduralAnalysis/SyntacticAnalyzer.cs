@@ -186,6 +186,7 @@ namespace InterproceduralAnalysis
                         return node;
                 }
 
+                program.Vars.Add(var.TokenText);
                 program.VarsDecl.Add(var.TokenText, expr);
 
                 ReadNextAst();

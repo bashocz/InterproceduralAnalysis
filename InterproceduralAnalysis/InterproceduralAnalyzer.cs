@@ -29,6 +29,45 @@ namespace InterproceduralAnalysis
             w_queue = new Queue<QueueItem>();
         }
 
+        #region Creating Transition Matrixes
+
+        private long[][] GetMatrix(OperatorAst expr, List<string> vars)
+        {
+            long[][] mtx = GetIdentity();
+
+            if ((expr != null) && (expr.Token == TokenTypes.Equals))
+            {
+                int vi = vars.IndexOf(expr.Left.TokenText) + 1;
+                if ((vi > 0) && (vi <= vars.Count))
+                {
+                    // tady tedy vubec nevim, jak AST prevest na tu matici :-(... takze tezky pokus
+
+                    // jelikoz znam program, tak tadz pouziju konstanty :-)
+                    if (vi == 1)
+                    {
+                        mtx[0][vi] = 1;
+                    }
+                    else if (vi == 2)
+                    {
+                        mtx[0][vi] = 2;
+                        mtx[1][vi] = 1;
+                    }
+                    else if (vi == 3)
+                    {
+                        mtx[0][vi] = 3;
+                        mtx[1][vi] = 2;
+                        mtx[2][vi] = 1;
+                    }
+                }
+            }
+
+            return mtx;
+        }
+
+        #endregion Creating Transition Matrixes
+
+        #region Creating Generator Sets
+
         private int GetPrime(int w)
         {
             int p = w;
@@ -184,7 +223,7 @@ namespace InterproceduralAnalysis
         {
             if (g_act[ii] != null)
             {
-                if (g_act[ii].Lidx < vector.Lidx)
+                if (g_act[ii].Lidx > vector.Lidx)
                 {
                     int i = var_n - 2;
                     while (i >= ii)
@@ -304,7 +343,7 @@ namespace InterproceduralAnalysis
                 w_queue.Enqueue(new QueueItem { Node = node, Vector = new LeadVector(id[i]) });
         }
 
-        public void CreateEmptyG(ProgramAst prg)
+        private void CreateEmptyG(ProgramAst prg)
         {
             foreach (IaNode node in prg.Graph.Values)
             {
@@ -320,7 +359,35 @@ namespace InterproceduralAnalysis
             }
         }
 
-        public void Analyze(ProgramAst prg)
+        #endregion Creating Generator Sets
+
+        public void CreateTransitionMatrixes(ProgramAst prg)
+        {
+            IaNode node = prg.Graph["main"]; // pro pokusy to ted staci :-)... pak se to musi rozsirit i na inicializovane VAR
+
+            while (node != null)
+            {
+                IaEdge edge = node.Next; // zatim jde o linearni funkci
+
+                if (edge != null)
+                {
+                    if (edge.Ast is OperatorAst)
+                    {
+                        edge.MatrixSet.Add(GetMatrix(edge.Ast as OperatorAst, prg.Vars));
+                    }
+                    else
+                    {
+                        edge.MatrixSet.Add(GetIdentity());
+                    }
+
+                    node = edge.To;
+                }
+                else
+                    node = null;
+            }
+        }
+
+        public void CreateGeneratorSets(ProgramAst prg)
         {
             CreateEmptyG(prg);
             IaNode first = prg.Graph["main"]; // pro pokusy to ted staci :-)... pak se to musi rozsirit i na inicializovane VAR
@@ -342,11 +409,57 @@ namespace InterproceduralAnalysis
                         LeadVector x = new LeadVector(xi);
                         if (AddVector(to.GeneratorSet, x))
                         {
-                            w_queue.Enqueue(new QueueItem { Node = pair.Node, Vector = x });
+                            w_queue.Enqueue(new QueueItem { Node = to, Vector = x });
                         }
                     }
                 }
             }
         }
+
+        public void PrintLastG(ProgramAst prg)
+        {
+            IaNode node = prg.Graph["main"]; // pro pokusy to ted staci :-)... pak se to musi rozsirit i na inicializovane VAR
+
+            while (node != null)
+            {
+                IaEdge edge = node.Next; // zatim jde o linearni funkci
+
+                if (edge != null)
+                {
+                    node = edge.To;
+                }
+                else
+                {
+                    PrintMatrix(node.GeneratorSet);
+                    node = null;
+                }
+            }
+
+        }
+
+        private void PrintMatrix(LeadVector[] m)
+        {
+            if (m[0] == null)
+            {
+                Console.WriteLine("null");
+                return;
+            }
+
+            int k = m.Length;
+            int l = m[0].Vr.Length;
+
+            for (int j = 0; j < l; j++)
+            {
+                int i = 0;
+                while ((i < k) && (m[i] != null))
+                {
+                    Console.Write("{0} ", m[i].Vr[j]);
+                    i++;
+                }
+                Console.WriteLine();
+            }
+            Console.WriteLine();
+        }
+
     }
 }

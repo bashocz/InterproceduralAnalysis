@@ -42,7 +42,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Compute.cs" />
+    <Compile Include="InterproceduralAnalyzer.cs" />
     <Compile Include="GraphGenerator.cs" />
     <Compile Include="LexicalAnalyzer.cs" />
     <Compile Include="Models.cs" />
@@ -54,6 +54,7 @@
     <Compile Include="Test.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="program_old.txt" />
     <Content Include="program.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

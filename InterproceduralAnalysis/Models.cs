@@ -177,10 +177,16 @@ namespace InterproceduralAnalysis
             AstType = AstNodeTypes.Program;
         }
 
-        private Dictionary<string, BaseAst> vars;
+        private List<string> vars;
+        public List<string> Vars
+        {
+            get { return vars ?? (vars = new List<string>()); }
+        }
+
+        private Dictionary<string, BaseAst> varsDecl;
         public Dictionary<string, BaseAst> VarsDecl
         {
-            get { return vars ?? (vars = new Dictionary<string, BaseAst>()); }
+            get { return varsDecl ?? (varsDecl = new Dictionary<string, BaseAst>()); }
         }
 
         private Dictionary<string, FunctionAst> origFncs;

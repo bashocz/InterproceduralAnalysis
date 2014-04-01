@@ -1,64 +1,7 @@
-﻿var a,b = 5, c= b, k=--a, l=b++,m=3*(l+2);
-var r=3*a+2*c+8;
-var x;
-var y = 5 + 1*x - 6*(r+2) + 4*m;
-var z=1*(2 + 3*x++ - 4*(++y +5) + 6*r--) + 7*(8 + 9*x++ - 10*(++y +11) + 12*r--) + 13*(14 + 15*x++ - 16*(++y +17) + 18*r--) + 19*(20 + 21*x++ - 22*(++y +23) + 24*r--) + 231465978;
-var w=7*(5 + 1* --x - 6*(--z+2) + 4* ++r);
-
-var e;
-var f,g,h;
-var i,j;
-
-function difference(){
-while( b > a ){
-b--;
-++x;
-if(b!=x){
-a = x - b;
-//error();      // toto bude chyba, neznama procedura
-}
-}
-f = a - b;
-count();
-return;
-}
+﻿var a,b,c;
 
 function main(){
-if (!(a == b) && ((y > z) || (w >= ++m))){
-	a = 10 + b;
-	goto one;
-}
-else {
-	b = 30 - 10 * x - 4 + y - 6 * z;
-	w = 3 * (5 + 1 * --x - 6 * (--z + 2) + 4 * ++w);
-}
-
-{
-	x = 0x14abcdef;
-	y = -5;
-	{
-		z = 105;
-		w = 101;
-	}
-	a = x + 3*y - 2*z;
-	b = 6 * (x - y - z);
-}
-//vysledek = 20- 5;      // toto bude chyba, neznamy indetifikator
-
-count(); 
-
-one:
-c = a;
-}
-
-function count(){
-	e = a + b;
-	if (i + 3 >= j * 8 && i * 9 < j++){ 
-		difference();
-		for(i = 0; i < 10; i++)
-{
-  x = i;
-    }
-}
-return;
+	a = 1;
+	b = 2 + 1 * a;
+	c = 3 + 2 * a + 1 * b;
 }

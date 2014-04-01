@@ -30,7 +30,7 @@ namespace InterproceduralAnalysis
 
 
             InterproceduralAnalyzer rm = new InterproceduralAnalyzer(w, n);
-            rm.Analyze(prg);
+            rm.CreateGeneratorSets(prg);
 
 
 
