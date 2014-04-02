@@ -19,7 +19,7 @@ namespace InterproceduralAnalysis
         static int Main(string[] args)
         {
             //programName = args[0];
-            programFile = @"c:/github/InterproceduralAnalysis/InterproceduralAnalysis/program.txt";
+            programFile = @"D:/projects/github/InterproceduralAnalysis/InterproceduralAnalysis/program.txt";
             //printLA = arg[1];
             printLA = false;
             printSA = false;
@@ -64,7 +64,7 @@ namespace InterproceduralAnalysis
             GraphGenerator gg = new GraphGenerator();
             gg.CreateGraph(prg);
 
-            int w = 8;
+            int w = 3;
             InterproceduralAnalyzer ia = new InterproceduralAnalyzer(w, prg.VarsDecl.Count);
             ia.CreateTransitionMatrixes(prg);
             ia.CreateGeneratorSets(prg);

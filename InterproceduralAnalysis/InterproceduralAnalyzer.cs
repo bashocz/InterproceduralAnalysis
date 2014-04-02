@@ -31,9 +31,11 @@ namespace InterproceduralAnalysis
 
         #region Creating Transition Matrixes
 
-        private void GetConst(BaseAst node, List<string> vars, out int vii, out int c)
+        private bool GetConst(BaseAst node, List<string> vars, out int vii, out long c)
         {
-            vii = c = 0;
+            vii = 0;
+            c = 0;
+
             if ((node.AstType == AstNodeTypes.Number) && (node is NumberAst))
             {
                 c = (node as NumberAst).Number;
@@ -57,11 +59,11 @@ namespace InterproceduralAnalysis
 
                 if ((num.AstType == AstNodeTypes.Number) && (num is NumberAst))
                 {
-                    c = (num as NumberAst).Number;
+                    c = ((num as NumberAst).Number + var_m) % var_m;
                 }
                 else
                 {
-                    throw new ApplicationException();
+                    return false;
                 }
 
                 if (var.AstType == AstNodeTypes.Variable)
@@ -70,28 +72,32 @@ namespace InterproceduralAnalysis
                 }
                 else
                 {
-                    throw new ApplicationException();
+                    return false;
                 }
             }
             else
             {
-                throw new ApplicationException();
+                return false;
             }
+            return true;
         }
 
-        private void ProceedExpr(BaseAst top, long[][] mtx, int vi, List<string> vars)
+        private bool ProceedExpr(BaseAst top, long[][] mtx, int vi, List<string> vars)
         {
             BaseAst node = top;
-            int vii, c;
+            int vii;
+            long c;
+            bool isError = false;
 
-            while (node != null)
+            while ((node != null) && (!isError))
             {
                 if ((node.AstType == AstNodeTypes.Number) ||
                     (node.AstType == AstNodeTypes.Variable) ||
                     ((node.AstType == AstNodeTypes.Operator) && (node.Token == TokenTypes.Multi)))
                 {
-                    GetConst(node, vars, out vii, out c);
-                    mtx[vii][vi] += c;
+                    if (isError = !GetConst(node, vars, out vii, out c))
+                        break;
+                    mtx[vii][vi] = (mtx[vii][vi] + c) % var_m;
                     node = null;
                 }
                 else if ((node.AstType == AstNodeTypes.Operator) && (node is OperatorAst) && ((node.Token == TokenTypes.Plus) || (node.Token == TokenTypes.Minus)))
@@ -110,24 +116,28 @@ namespace InterproceduralAnalysis
                         (left.AstType == AstNodeTypes.Variable) ||
                         ((left.AstType == AstNodeTypes.Operator) && (left.Token == TokenTypes.Multi)))
                     {
-                        GetConst(left, vars, out vii, out c);
-                        mtx[vii][vi] += c;
+                        if (isError = !GetConst(left, vars, out vii, out c))
+                            break;
+                        mtx[vii][vi] = (mtx[vii][vi] + c) % var_m;
                     }
                     else
                     {
-                        throw new ApplicationException();
+                        isError = true;
+                        break;
                     }
 
                     node = right;
                 }
                 else
                 {
-                    throw new ApplicationException();
+                    isError = true;
+                    break;
                 }
             }
+            return !isError;
         }
 
-        private long[][] GetMatrix(OperatorAst expr, List<string> vars)
+        private void GetMatrix(List<long[][]> ml, OperatorAst expr, List<string> vars)
         {
             long[][] mtx = GetIdentity();
 
@@ -141,11 +151,18 @@ namespace InterproceduralAnalysis
                     // umi to pouze vyraz typu x_? = c_0 + c_1 * x_1 + .. + c_n * x_n (pripadne scitance nejak zprehazene)
 
                     mtx[vi][vi] = 0; // vynulovat 1 na diagonale pro cilovou promennou
-                    ProceedExpr(expr.Right, mtx, vi, vars);
+                    if (ProceedExpr(expr.Right, mtx, vi, vars))
+                        ml.Add(mtx);
+                    else
+                    {
+                        mtx = GetIdentity();
+                        mtx[vi][vi] = 0;
+                        ml.Add(mtx); // vyraz.. x_? = 0
+                        mtx[0][vi] = 1;
+                        ml.Add(mtx); // vyraz.. x_? = 1
+                    }
                 }
             }
-
-            return mtx;
         }
 
         #endregion Creating Transition Matrixes
@@ -224,7 +241,7 @@ namespace InterproceduralAnalysis
             long[] result = new long[l];
             for (int j = 0; j < l; j++)
                 for (int a = 0; a < z; a++)
-                    result[j] += matrix[a][j] * vector[a];
+                    result[j] = (result[j] + matrix[a][j] * vector[a]) % var_m;
 
             return result;
         }
@@ -245,7 +262,7 @@ namespace InterproceduralAnalysis
                 {
                     long sum = 0;
                     for (int a = 0; a < k; a++)
-                        sum += left[a][j] * right[i][a];
+                        sum = (sum + left[a][j] * right[i][a]) % var_m;
                     result[i][j] = sum;
                 }
             }
@@ -338,7 +355,7 @@ namespace InterproceduralAnalysis
             int l = tvr.Vr.Length;
             long[] wr = new long[l];
             for (int i = 0; i < l; i++)
-                wr[i] = ((x * tvr.Vr[i]) % var_m + var_m) % var_m;
+                wr[i] = (x * tvr.Vr[i]) % var_m;
 
             LeadVector twr = new LeadVector(wr);
             if (twr.Lidx >= 0)
@@ -403,7 +420,7 @@ namespace InterproceduralAnalysis
                 int l = tvr.Vr.Length;
                 long[] wr = new long[l];
                 for (int j = 0; j < l; j++)
-                    wr[j] = (((dg * tvr.Vr[j]) - (x * g_act[i].Vr[j])) % var_m + var_m) % var_m;
+                    wr[j] = (((dg * tvr.Vr[j]) - (x * g_act[i].Vr[j])) % var_m + var_m) % var_m; // 2x modulo pro odstraneni zapornych cisel pod odecitani
 
                 LeadVector twr = new LeadVector(wr);
                 if (twr.Lidx >= 0)
@@ -457,7 +474,7 @@ namespace InterproceduralAnalysis
                 {
                     if (edge.Ast is OperatorAst)
                     {
-                        edge.MatrixSet.Add(GetMatrix(edge.Ast as OperatorAst, prg.Vars));
+                        GetMatrix(edge.MatrixSet, edge.Ast as OperatorAst, prg.Vars);
                     }
                     else
                     {
@@ -495,7 +512,7 @@ namespace InterproceduralAnalysis
                         {
                             if (AddVector(to.GeneratorSet, x))
                             {
-                                w_queue.Enqueue(new QueueItem {Node = to, Vector = x});
+                                w_queue.Enqueue(new QueueItem { Node = to, Vector = x });
                             }
                         }
                     }
