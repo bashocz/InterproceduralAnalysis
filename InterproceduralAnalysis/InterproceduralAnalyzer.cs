@@ -31,6 +31,102 @@ namespace InterproceduralAnalysis
 
         #region Creating Transition Matrixes
 
+        private void GetConst(BaseAst node, List<string> vars, out int vii, out int c)
+        {
+            vii = c = 0;
+            if ((node.AstType == AstNodeTypes.Number) && (node is NumberAst))
+            {
+                c = (node as NumberAst).Number;
+            }
+            else if (node.AstType == AstNodeTypes.Variable)
+            {
+                vii = vars.IndexOf(node.TokenText) + 1;
+                c = 1;
+            }
+            else if ((node.AstType == AstNodeTypes.Operator) && (node is OperatorAst) && (node.Token == TokenTypes.Multi))
+            {
+                BaseAst num = (node as OperatorAst).Left;
+                BaseAst var = (node as OperatorAst).Right;
+
+                if (var is NumberAst)
+                {
+                    BaseAst tmp = num;
+                    num = var;
+                    var = tmp;
+                }
+
+                if ((num.AstType == AstNodeTypes.Number) && (num is NumberAst))
+                {
+                    c = (num as NumberAst).Number;
+                }
+                else
+                {
+                    throw new ApplicationException();
+                }
+
+                if (var.AstType == AstNodeTypes.Variable)
+                {
+                    vii = vars.IndexOf(var.TokenText) + 1;
+                }
+                else
+                {
+                    throw new ApplicationException();
+                }
+            }
+            else
+            {
+                throw new ApplicationException();
+            }
+        }
+
+        private void ProceedExpr(BaseAst top, long[][] mtx, int vi, List<string> vars)
+        {
+            BaseAst node = top;
+            int vii, c;
+
+            while (node != null)
+            {
+                if ((node.AstType == AstNodeTypes.Number) ||
+                    (node.AstType == AstNodeTypes.Variable) ||
+                    ((node.AstType == AstNodeTypes.Operator) && (node.Token == TokenTypes.Multi)))
+                {
+                    GetConst(node, vars, out vii, out c);
+                    mtx[vii][vi] += c;
+                    node = null;
+                }
+                else if ((node.AstType == AstNodeTypes.Operator) && (node is OperatorAst) && ((node.Token == TokenTypes.Plus) || (node.Token == TokenTypes.Minus)))
+                {
+                    BaseAst left = (node as OperatorAst).Left;
+                    BaseAst right = (node as OperatorAst).Right;
+
+                    if ((left.AstType == AstNodeTypes.Operator) && ((left.Token == TokenTypes.Plus) || (left.Token == TokenTypes.Minus)))
+                    {
+                        BaseAst tmp = left;
+                        left = right;
+                        right = tmp;
+                    }
+
+                    if ((left.AstType == AstNodeTypes.Number) ||
+                        (left.AstType == AstNodeTypes.Variable) ||
+                        ((left.AstType == AstNodeTypes.Operator) && (left.Token == TokenTypes.Multi)))
+                    {
+                        GetConst(left, vars, out vii, out c);
+                        mtx[vii][vi] += c;
+                    }
+                    else
+                    {
+                        throw new ApplicationException();
+                    }
+
+                    node = right;
+                }
+                else
+                {
+                    throw new ApplicationException();
+                }
+            }
+        }
+
         private long[][] GetMatrix(OperatorAst expr, List<string> vars)
         {
             long[][] mtx = GetIdentity();
@@ -40,24 +136,12 @@ namespace InterproceduralAnalysis
                 int vi = vars.IndexOf(expr.Left.TokenText) + 1;
                 if ((vi > 0) && (vi <= vars.Count))
                 {
-                    // tady tedy vubec nevim, jak AST prevest na tu matici :-(... takze tezky pokus
+                    // tady tedy vubec nevim, jak obecny AST prevest na tu matici :-(...
 
-                    // jelikoz znam program, tak tadz pouziju konstanty :-)
-                    if (vi == 1)
-                    {
-                        mtx[0][vi] = 1;
-                    }
-                    else if (vi == 2)
-                    {
-                        mtx[0][vi] = 2;
-                        mtx[1][vi] = 1;
-                    }
-                    else if (vi == 3)
-                    {
-                        mtx[0][vi] = 3;
-                        mtx[1][vi] = 2;
-                        mtx[2][vi] = 1;
-                    }
+                    // umi to pouze vyraz typu x_? = c_0 + c_1 * x_1 + .. + c_n * x_n (pripadne scitance nejak zprehazene)
+
+                    mtx[vi][vi] = 0; // vynulovat 1 na diagonale pro cilovou promennou
+                    ProceedExpr(expr.Right, mtx, vi, vars);
                 }
             }
 
@@ -407,9 +491,12 @@ namespace InterproceduralAnalysis
                     {
                         long[] xi = MatrixMultiVector(a_mtx, pair.Vector.Vr);
                         LeadVector x = new LeadVector(xi);
-                        if (AddVector(to.GeneratorSet, x))
+                        if (x.Lidx >= 0) // neni to nulovy vektor
                         {
-                            w_queue.Enqueue(new QueueItem { Node = to, Vector = x });
+                            if (AddVector(to.GeneratorSet, x))
+                            {
+                                w_queue.Enqueue(new QueueItem {Node = to, Vector = x});
+                            }
                         }
                     }
                 }

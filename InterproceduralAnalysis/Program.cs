@@ -19,7 +19,7 @@ namespace InterproceduralAnalysis
         static int Main(string[] args)
         {
             //programName = args[0];
-            programFile = @"D:/projects/github/InterproceduralAnalysis/InterproceduralAnalysis/program.txt";
+            programFile = @"c:/github/InterproceduralAnalysis/InterproceduralAnalysis/program.txt";
             //printLA = arg[1];
             printLA = false;
             printSA = false;
