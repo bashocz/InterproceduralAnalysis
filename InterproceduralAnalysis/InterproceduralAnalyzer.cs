@@ -159,6 +159,7 @@ namespace InterproceduralAnalysis
                         mtx[vi][vi] = 0;
                         ml.Add(mtx); // vyraz.. x_? = 0
                         mtx = GetIdentity();
+                        mtx[vi][vi] = 0;
                         mtx[0][vi] = 1;
                         ml.Add(mtx); // vyraz.. x_? = 1
                     }
