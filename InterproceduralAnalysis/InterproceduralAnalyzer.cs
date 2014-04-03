@@ -158,6 +158,7 @@ namespace InterproceduralAnalysis
                         mtx = GetIdentity();
                         mtx[vi][vi] = 0;
                         ml.Add(mtx); // vyraz.. x_? = 0
+                        mtx = GetIdentity();
                         mtx[0][vi] = 1;
                         ml.Add(mtx); // vyraz.. x_? = 1
                     }
@@ -453,9 +454,12 @@ namespace InterproceduralAnalysis
                 while (q.Count > 0)
                 {
                     IaNode n = q.Dequeue();
-                    n.GeneratorSet = new LeadVector[var_n];
-                    foreach (IaEdge edge in n.Edges)
-                        q.Enqueue(edge.To);
+                    if (n.GeneratorSet == null)
+                    {
+                        n.GeneratorSet = new LeadVector[var_n];
+                        foreach (IaEdge edge in n.Edges)
+                            q.Enqueue(edge.To);
+                    }
                 }
             }
         }
