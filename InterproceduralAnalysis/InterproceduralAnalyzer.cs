@@ -7,30 +7,319 @@ namespace InterproceduralAnalysis
 {
     class InterproceduralAnalyzer
     {
-        protected readonly int var_w, var_n;
-        protected readonly long var_m;
-        private readonly int prime;
-        private readonly int[] r_arr;
+        private readonly BaseFunctions b;
+
+        private readonly int var_n;
+        private readonly long var_m;
+
+        private readonly bool printM;
+        private readonly bool printG;
 
         private Queue<QueueItem> w_queue;
 
-        public InterproceduralAnalyzer(int w, int n)
+        public InterproceduralAnalyzer(int w, int n, bool printGM, bool printGG)
         {
             if ((w <= 0) || (n < 0))
                 throw new ApplicationException();
 
-            this.var_w = w;
-            //this.var_m = (long)Math.Pow(2, w);
-            this.var_m = 1L << w;
-            this.var_n = n + 1; // velikost matice G... +1 pro konstanty
+            this.printM = printGM;
+            this.printG = printGG;
 
-            prime = GetPrime(var_w);
-            r_arr = GetRArray(var_w, prime);
+            b = new BaseFunctions(w, n);
+
+            var_n = b.var_n;
+            var_m = b.var_m;
 
             w_queue = new Queue<QueueItem>();
         }
 
         #region Creating Transition Matrixes
+
+        private void CreateTransitionMatrixes(ProgramAst prg)
+        {
+            IaNode node = prg.Graph["main"]; // pro pokusy to ted staci :-)... pak se to musi rozsirit i na inicializovane VAR
+
+            Queue<IaNode> q = new Queue<IaNode>();
+            q.Enqueue(node);
+            while (q.Count > 0)
+            {
+                IaNode n = q.Dequeue();
+                if (n != null)
+                {
+                    foreach (IaEdge edge in n.Edges)
+                    {
+                        if (edge.MatrixSet == null)
+                        {
+                            var mtx = new TransitionMatrixSet(edge, b);
+                            mtx.GetMatrix(prg.Vars);
+                            edge.MatrixSet = mtx;
+
+                            if (printM)
+                                mtx.Print();
+
+                            q.Enqueue(edge.To);
+                        }
+                    }
+                }
+            }
+        }
+
+        #endregion Creating Transition Matrixes
+
+        #region Creating Generator Sets
+
+        private void AddIdentityVectors(Queue<QueueItem> w_queue, IaNode node)
+        {
+            long[][] id = b.GetIdentity(var_n);
+            for (int i = 0; i < var_n; i++)
+                w_queue.Enqueue(new QueueItem { Node = node, Vector = new LeadVector(id[i]) });
+        }
+
+        private void CreateEmptyG(ProgramAst prg)
+        {
+            foreach (IaNode node in prg.Graph.Values)
+            {
+                Queue<IaNode> q = new Queue<IaNode>();
+                q.Enqueue(node);
+                while (q.Count > 0)
+                {
+                    IaNode n = q.Dequeue();
+                    if (n.GeneratorSet == null)
+                    {
+                        n.GeneratorSet = new GeneratorSet(n, b);
+                        foreach (IaEdge edge in n.Edges)
+                            if (edge.To.GeneratorSet == null)
+                                q.Enqueue(edge.To);
+                    }
+                }
+            }
+        }
+
+        private void CreateGeneratorSets(ProgramAst prg)
+        {
+            CreateEmptyG(prg);
+            IaNode first = prg.Graph["main"]; // pro pokusy to ted staci :-)... pak se to musi rozsirit i na inicializovane VAR
+            AddIdentityVectors(w_queue, first);
+
+            while (w_queue.Count > 0)
+            {
+                QueueItem pair = w_queue.Dequeue();
+
+                IaNode from = pair.Node;
+                // zde musi byt kontrola, zda se nejedna o volani funkce... pokud ano, je treba pridat hranu do W
+                foreach (IaEdge edge in from.Edges)
+                {
+                    IaNode to = edge.To;
+
+                    foreach (long[][] a_mtx in edge.MatrixSet.TMatrixes)
+                    {
+                        long[] xi = b.MatrixMultiVector(a_mtx, pair.Vector.Vr, var_m);
+                        LeadVector x = new LeadVector(xi);
+                        if (x.Lidx >= 0) // neni to nulovy vektor
+                        {
+                            if (to.GeneratorSet.AddVector(x))
+                            {
+                                if (printG)
+                                    to.GeneratorSet.Print();
+
+                                w_queue.Enqueue(new QueueItem { Node = to, Vector = x });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        #endregion Creating Generator Sets
+
+        public void Analyze(ProgramAst prg)
+        {
+            CreateTransitionMatrixes(prg);
+            CreateGeneratorSets(prg);
+        }
+    }
+
+    class BaseFunctions
+    {
+        public readonly int var_w, var_n;
+        public readonly long var_m;
+        private readonly int prime;
+        private readonly int[] r_arr;
+
+        public BaseFunctions(int w, int n)
+        {
+            if ((w <= 0) || (n < 0))
+                throw new ApplicationException();
+
+            var_w = w;
+            var_m = 1L << w;
+            var_n = n + 1; // velikost matice G... +1 pro konstanty
+
+            prime = GetPrime(var_w);
+            r_arr = GetRArray(var_w, prime);
+        }
+
+        private int GetPrime(int w)
+        {
+            int p = w;
+            while (!IsPrime(p))
+                p++;
+            return p;
+        }
+
+        private bool IsPrime(int n)
+        {
+            if (n == 1) return false;
+            if (n == 2 || n == 3) return true;
+            if ((n & 1) == 0) return false;
+            if ((((n + 1) % 6) == 0) && (((n - 1) % 6) == 0)) return false;
+            int q = (int)Math.Sqrt(n) + 1;
+            for (int v = 3; v < q; v += 2)
+                if (n % v == 0)
+                    return false;
+            return true;
+        }
+
+        private int[] GetRArray(int w, int p)
+        {
+            int[] a = new int[p];
+            for (int i = 0; i < w; i++)
+            {
+                long idx = (long)(1L << i) % p;
+                a[idx] = i;
+            }
+            return a;
+        }
+
+        public int Reduction(long nr, out long d)
+        {
+            if ((nr % 2) != 0) // odd number
+            {
+                d = nr;
+                return 0;
+            }
+
+            int r = r_arr[(nr & (-nr)) % prime];
+            d = (nr >> r);
+            return r;
+        }
+
+        private long[][] GetMArray(int k, int l)
+        {
+            long[][] mx = new long[k][];
+
+            for (int i = 0; i < l; i++)
+                mx[i] = new long[l];
+            return mx;
+        }
+
+        public long[][] GetIdentity(int n)
+        {
+            long[][] mx = GetMArray(n, n);
+            for (int i = 0; i < n; i++)
+                mx[i][i] = 1;
+            return mx;
+        }
+
+        public long[] MatrixMultiVector(long[][] matrix, long[] vector, long mod)
+        {
+            int z = matrix.Length;
+            if (z != vector.Length)
+                throw new ApplicationException();
+
+            int l = matrix[0].Length;
+            long[] result = new long[l];
+            for (int j = 0; j < l; j++)
+                for (int a = 0; a < z; a++)
+                    result[j] = (result[j] + matrix[a][j] * vector[a]) % mod;
+
+            return result;
+        }
+
+        public long[][] MatrixMultiMatrix(long[][] left, long[][] right, long mod)
+        {
+            int z = left.Length;
+            if (z != right[0].Length)
+                throw new ApplicationException();
+
+            int k = right.Length;
+            int l = left[0].Length;
+            long[][] result = GetMArray(k, l);
+
+            for (int i = 0; i < k; i++)
+            {
+                for (int j = 0; j < l; j++)
+                {
+                    long sum = 0;
+                    for (int a = 0; a < k; a++)
+                        sum = (sum + left[a][j] * right[i][a]) % mod;
+                    result[i][j] = sum;
+                }
+            }
+
+            return result;
+        }
+
+        //public long[] ConvertMatrixToVector(long[][] matrix)
+        //{
+        //    int k = matrix[0].Length;
+        //    int l = matrix[1].Length;
+        //    long[] vector = new long[k*l];
+
+        //    for (int i = 0; i < k; i++)
+        //    {
+        //        for (int j = 0; j < l; j++)
+        //        {
+        //            vector[j + i * l] = matrix[i][j];
+        //        }
+        //    }
+
+        //    return vector;
+        //}
+
+        //public long[][] ConvertVectorToMatrix(long[] vector)
+        //{
+        //    long[][] matrix = new long[var_n][];
+
+        //    for (int i = 0; i < var_n; i++)
+        //    {
+        //        for (int j = 0; j < var_n; j++)
+        //        {
+        //            matrix[i][j] = vector[j + i * var_n];
+        //        }
+        //    }
+
+        //    return matrix;
+        //}
+
+        //public RMatrix(int w, int n)
+        //    : base(w, n)
+        //{
+        //    mx = GetEmpty();
+        //    tmx = new TempVector[mx.Length];
+        //}
+    }
+
+    class TransitionMatrixSet
+    {
+        private readonly IaEdge parent;
+        private readonly BaseFunctions b;
+
+        private readonly int var_n;
+        private readonly long var_m;
+
+        public TransitionMatrixSet(IaEdge parent, BaseFunctions b)
+        {
+            this.parent = parent;
+            this.b = b;
+
+            var_n = b.var_n;
+            var_m = b.var_m;
+
+            TMatrixes = new List<long[][]>();
+        }
+
+        public List<long[][]> TMatrixes { get; private set; }
 
         private bool GetConst(BaseAst node, List<string> vars, out int vii, out long c)
         {
@@ -138,9 +427,9 @@ namespace InterproceduralAnalysis
             return !isError;
         }
 
-        private void GetMatrix(List<long[][]> ml, OperatorAst expr, List<string> vars)
+        public void GetMatrix(List<string> vars)
         {
-            long[][] mtx = GetIdentity();
+            OperatorAst expr = parent.Ast as OperatorAst;
 
             if ((expr != null) && (expr.Token == TokenTypes.Equals))
             {
@@ -150,192 +439,153 @@ namespace InterproceduralAnalysis
                     // tady tedy vubec nevim, jak obecny AST prevest na tu matici :-(...
 
                     // umi to pouze vyraz typu x_? = c_0 + c_1 * x_1 + .. + c_n * x_n (pripadne scitance nejak zprehazene)
+                    long[][] mtx = b.GetIdentity(var_n);
 
                     mtx[vi][vi] = 0; // vynulovat 1 na diagonale pro cilovou promennou
                     if (ProceedExpr(expr.Right, mtx, vi, vars))
-                        ml.Add(mtx);
+                        TMatrixes.Add(mtx);
                     else
                     {
-                        mtx = GetIdentity();
+                        // neznamy vyraz
+                        mtx = null;
+                        mtx = b.GetIdentity(var_n);
                         mtx[vi][vi] = 0;
-                        ml.Add(mtx); // vyraz.. x_? = 0
-                        mtx = GetIdentity();
+                        TMatrixes.Add(mtx); // vyraz.. x_? = 0
+                        mtx = b.GetIdentity(var_n);
                         mtx[vi][vi] = 0;
                         mtx[0][vi] = 1;
-                        ml.Add(mtx); // vyraz.. x_? = 1
+                        TMatrixes.Add(mtx); // vyraz.. x_? = 1
                     }
                 }
             }
-        }
-
-        #endregion Creating Transition Matrixes
-
-        #region Creating Generator Sets
-
-        private int GetPrime(int w)
-        {
-            int p = w;
-            while (!IsPrime(p))
-                p++;
-            return p;
-        }
-
-        private bool IsPrime(int n)
-        {
-            if (n == 1) return false;
-            if (n == 2 || n == 3) return true;
-            if ((n & 1) == 0) return false;
-            if ((((n + 1) % 6) == 0) && (((n - 1) % 6) == 0)) return false;
-            int q = (int)Math.Sqrt(n) + 1;
-            for (int v = 3; v < q; v += 2)
-                if (n % v == 0)
-                    return false;
-            return true;
-        }
-
-        private int[] GetRArray(int w, int p)
-        {
-            int[] a = new int[p];
-            for (int i = 0; i < w; i++)
+            else
             {
-                long idx = (long)(Math.Pow(2, i)) % p;
-                a[idx] = i;
+                TMatrixes.Add(b.GetIdentity(var_n));
             }
-            return a;
         }
 
-        private long[][] GetMArray(int k, int l)
+        public void Print()
         {
-            long[][] mx = new long[k][];
+            Console.WriteLine("M (pocet matic {1}) na hrane '{0}':", parent.Name, (TMatrixes != null) ? TMatrixes.Count : 0);
 
-            for (int i = 0; i < l; i++)
-                mx[i] = new long[l];
-            return mx;
-        }
-
-        private int Reduction(long nr, out long d)
-        {
-            if ((nr % 2) != 0) // odd number
+            if ((TMatrixes == null) || (TMatrixes.Count == 0))
             {
-                d = nr;
-                return 0;
+                Console.WriteLine("prazdna mnozina");
+                return;
             }
 
-            int r = r_arr[(nr & (-nr)) % prime];
-            d = (nr >> r);
-            return r;
-        }
-
-        private long[][] GetIdentity()
-        {
-            long[][] mx = GetMArray(var_n, var_n);
-            for (int i = 0; i < var_n; i++)
-                mx[i][i] = 1;
-            return mx;
-        }
-
-        private long[] MatrixMultiVector(long[][] matrix, long[] vector)
-        {
-            int z = matrix.Length;
-            if (z != vector.Length)
-                throw new ApplicationException();
-
-            int l = matrix[0].Length;
-            long[] result = new long[l];
-            for (int j = 0; j < l; j++)
-                for (int a = 0; a < z; a++)
-                    result[j] = (result[j] + matrix[a][j] * vector[a]) % var_m;
-
-            return result;
-        }
-
-        private long[][] MatrixMultiMatrix(long[][] left, long[][] right)
-        {
-            int z = left.Length;
-            if (z != right[0].Length)
-                throw new ApplicationException();
-
-            int k = right.Length;
-            int l = left[0].Length;
-            long[][] result = GetMArray(k, l);
-
-            for (int i = 0; i < k; i++)
+            int m = 1;
+            foreach (long[][] mtx in TMatrixes)
             {
+                Console.WriteLine("M[{0}]:", m);
+
+                int k = mtx.Length;
+                int l = mtx[0].Length;
+
                 for (int j = 0; j < l; j++)
                 {
-                    long sum = 0;
-                    for (int a = 0; a < k; a++)
-                        sum = (sum + left[a][j] * right[i][a]) % var_m;
-                    result[i][j] = sum;
+                    for (int i = 0; i < k; i++)
+                    {
+                        Console.Write("{0} ", mtx[i][j]);
+                    }
+                    Console.WriteLine();
                 }
+                Console.WriteLine();
+                m++;
             }
+        }
+    }
 
-            return result;
+    class LeadVector
+    {
+        private readonly long[] vr;
+        private readonly int li;
+
+        public LeadVector(long[] vr)
+        {
+            this.vr = vr;
+            li = GetLeadIndex(vr);
         }
 
-        //public long[] ConvertMatrixToVector(long[][] matrix)
-        //{
-        //    int k = matrix[0].Length;
-        //    int l = matrix[1].Length;
-        //    long[] vector = new long[k*l];
+        private int GetLeadIndex(long[] vr)
+        {
+            int k = vr.Length, li = -1;
+            for (int i = 0; i < k; i++)
+                if (vr[i] != 0)
+                {
+                    li = i;
+                    break;
+                }
+            return li;
+        }
 
-        //    for (int i = 0; i < k; i++)
-        //    {
-        //        for (int j = 0; j < l; j++)
-        //        {
-        //            vector[j + i * l] = matrix[i][j];
-        //        }
-        //    }
+        public long[] Vr
+        {
+            get { return vr; }
+        }
 
-        //    return vector;
-        //}
+        public int Lidx
+        {
+            get { return li; }
+        }
 
-        //public long[][] ConvertVectorToMatrix(long[] vector)
-        //{
-        //    long[][] matrix = new long[var_n][];
+        public long Lentry   // jen jsem to prejmenovala dle terminologie toho clanku
+        {
+            get
+            {
+                if ((li >= 0) && (li < vr.Length))
+                    return vr[li];
+                return 0;
+            }
+        }
+    }
 
-        //    for (int i = 0; i < var_n; i++)
-        //    {
-        //        for (int j = 0; j < var_n; j++)
-        //        {
-        //            matrix[i][j] = vector[j + i * var_n];
-        //        }
-        //    }
+    class GeneratorSet
+    {
+        private readonly IaNode parent;
+        private readonly BaseFunctions b;
 
-        //    return matrix;
-        //}
+        private readonly int var_w, var_n;
+        private readonly long var_m;
 
-        //public RMatrix(int w, int n)
-        //    : base(w, n)
-        //{
-        //    mx = GetEmpty();
-        //    tmx = new TempVector[mx.Length];
-        //}
+        public GeneratorSet(IaNode parent, BaseFunctions b)
+        {
+            this.parent = parent;
+            this.b = b;
 
-        private void RemoveVector(LeadVector[] g_act, int ri)
+            var_w = b.var_w;
+            var_n = b.var_n;
+            var_m = b.var_m;
+
+            GArr = new LeadVector[var_n];
+        }
+
+        public LeadVector[] GArr { get; private set; }
+
+        private void RemoveVector(int ri)
         {
             int i = ri;
-            while (i < (var_n - 1) && (g_act[i + 1] != null)) // pri mazani vektoru, je treba posunout vsechny vektory zprava o 1 pozici
+            while (i < (var_n - 1) && (GArr[i + 1] != null)) // pri mazani vektoru, je treba posunout vsechny vektory zprava o 1 pozici
             {
-                g_act[i] = g_act[i + 1];
+                GArr[i] = GArr[i + 1];
                 i++;
             }
-            g_act[i] = null; // posledni vektor je null -> konec G
+            GArr[i] = null; // posledni vektor je null -> konec G
         }
 
-        private void InsertVector(LeadVector[] g_act, int ii, LeadVector vector)
+        private void InsertVector(int ii, LeadVector vector)
         {
-            if (g_act[ii] != null)
+            if (GArr[ii] != null)
             {
-                if (g_act[ii].Lidx > vector.Lidx)
+                if (GArr[ii].Lidx > vector.Lidx)
                 {
                     int i = var_n - 2;
                     while (i >= ii)
                     {
-                        g_act[i + 1] = g_act[i];
+                        GArr[i + 1] = GArr[i];
                         i--;
                     }
-                    g_act[ii] = vector;
+                    GArr[ii] = vector;
                     return;
                 }
                 else
@@ -344,16 +594,15 @@ namespace InterproceduralAnalysis
                     throw new ApplicationException();
                 }
             }
-            g_act[ii] = vector; // jednoduse pridani vektoru na konec :-)
+            GArr[ii] = vector; // jednoduse pridani vektoru na konec :-)
         }
 
-        private void AddEven(LeadVector[] g_act, LeadVector tvr)
+        private void AddEven(LeadVector tvr)
         {
             int r;
             long d;
-            r = Reduction(tvr.Lentry, out d);
+            r = b.Reduction(tvr.Lentry, out d);
 
-            //int x = (int)Math.Pow(2, var_w - r);
             long x = 1L << (var_w - r);
 
             int l = tvr.Vr.Length;
@@ -363,48 +612,48 @@ namespace InterproceduralAnalysis
 
             LeadVector twr = new LeadVector(wr);
             if (twr.Lidx >= 0)
-                AddVector(g_act, twr);
+                AddVector(twr);
         }
 
-        private bool AddVector(LeadVector[] g_act, LeadVector tvr)
+        public bool AddVector(LeadVector tvr)
         {
             int i = 0;
 
-            while (g_act[i] != null)
+            while (GArr[i] != null)
             {
-                if (g_act[i].Lidx >= tvr.Lidx)
+                if (GArr[i].Lidx >= tvr.Lidx)
                     break;
                 i++;
             }
 
-            if (g_act[i] == null) // pridat vektor na konec G
+            if (GArr[i] == null) // pridat vektor na konec G
             {
                 if ((tvr.Lentry != 0) && ((tvr.Lentry % 2) == 0))
-                    AddEven(g_act, tvr);
+                    AddEven(tvr);
 
-                g_act[i] = tvr;
+                GArr[i] = tvr;
 
                 return true;
             }
-            else if (g_act[i].Lidx == tvr.Lidx)
+            else if (GArr[i].Lidx == tvr.Lidx)
             {
                 bool change = false;  // potrebujeme sledovat, jestli doslo k vlozeni nejakeho vektoru
 
                 int rv, rg;
                 long dv, dg;
-                rg = Reduction(g_act[i].Lentry, out dg);
-                rv = Reduction(tvr.Lentry, out dv);
+                rg = b.Reduction(GArr[i].Lentry, out dg);
+                rv = b.Reduction(tvr.Lentry, out dv);
 
                 if (rg > rv)
                 {
-                    LeadVector tmpx = g_act[i];
-                    RemoveVector(g_act, i);
+                    LeadVector tmpx = GArr[i];
+                    RemoveVector(i);
 
                     change = true; // byla provedena zmena
                     if ((tvr.Lentry != 0) && ((tvr.Lentry % 2) == 0))
-                        AddEven(g_act, tvr);
+                        AddEven(tvr);
 
-                    InsertVector(g_act, i, tvr);
+                    InsertVector(i, tvr);
 
                     tvr = tmpx;
 
@@ -424,153 +673,47 @@ namespace InterproceduralAnalysis
                 int l = tvr.Vr.Length;
                 long[] wr = new long[l];
                 for (int j = 0; j < l; j++)
-                    wr[j] = (((dg * tvr.Vr[j]) - (x * g_act[i].Vr[j])) % var_m + var_m) % var_m; // 2x modulo pro odstraneni zapornych cisel pod odecitani
+                    wr[j] = (((dg * tvr.Vr[j]) - (x * GArr[i].Vr[j])) % var_m + var_m) % var_m; // 2x modulo pro odstraneni zapornych cisel pod odecitani
 
                 LeadVector twr = new LeadVector(wr);
                 if (twr.Lidx >= 0)
-                    change |= AddVector(g_act, twr);
+                    change |= AddVector(twr);
 
                 return change;
             }
-            else if (g_act[i].Lidx > tvr.Lidx)
+            else if (GArr[i].Lidx > tvr.Lidx)
             {
-                InsertVector(g_act, i, tvr);
+                InsertVector(i, tvr);
                 return true;
             }
 
             return false;
         }
 
-        private void AddIdentityVectors(Queue<QueueItem> w_queue, IaNode node)
+        public void Print()
         {
-            long[][] id = GetIdentity();
-            for (int i = 0; i < var_n; i++)
-                w_queue.Enqueue(new QueueItem { Node = node, Vector = new LeadVector(id[i]) });
-        }
+            Console.WriteLine("G v uzlu '{0}':", parent.Name);
 
-        private void CreateEmptyG(ProgramAst prg)
-        {
-            foreach (IaNode node in prg.Graph.Values)
+            if ((GArr == null) || (GArr[0] == null))
             {
-                Queue<IaNode> q = new Queue<IaNode>();
-                q.Enqueue(node);
-                while (q.Count > 0)
-                {
-                    IaNode n = q.Dequeue();
-                    if (n.GeneratorSet == null)
-                    {
-                        n.GeneratorSet = new LeadVector[var_n];
-                        foreach (IaEdge edge in n.Edges)
-                            q.Enqueue(edge.To);
-                    }
-                }
-            }
-        }
-
-        #endregion Creating Generator Sets
-
-        public void CreateTransitionMatrixes(ProgramAst prg)
-        {
-            IaNode node = prg.Graph["main"]; // pro pokusy to ted staci :-)... pak se to musi rozsirit i na inicializovane VAR
-
-            while (node != null)
-            {
-                IaEdge edge = node.Next; // zatim jde o linearni funkci
-
-                if (edge != null)
-                {
-                    if (edge.Ast is OperatorAst)
-                    {
-                        GetMatrix(edge.MatrixSet, edge.Ast as OperatorAst, prg.Vars);
-                    }
-                    else
-                    {
-                        edge.MatrixSet.Add(GetIdentity());
-                    }
-
-                    node = edge.To;
-                }
-                else
-                    node = null;
-            }
-        }
-
-        public void CreateGeneratorSets(ProgramAst prg)
-        {
-            CreateEmptyG(prg);
-            IaNode first = prg.Graph["main"]; // pro pokusy to ted staci :-)... pak se to musi rozsirit i na inicializovane VAR
-            AddIdentityVectors(w_queue, first);
-
-            while (w_queue.Count > 0)
-            {
-                QueueItem pair = w_queue.Dequeue();
-
-                IaNode from = pair.Node;
-                // zde musi byt kontrola, zda se nejedna o volani funkce... pokud ano, je treba pridat hranu do W
-                foreach (IaEdge edge in from.Edges)
-                {
-                    IaNode to = edge.To;
-
-                    foreach (long[][] a_mtx in edge.MatrixSet)
-                    {
-                        long[] xi = MatrixMultiVector(a_mtx, pair.Vector.Vr);
-                        LeadVector x = new LeadVector(xi);
-                        if (x.Lidx >= 0) // neni to nulovy vektor
-                        {
-                            if (AddVector(to.GeneratorSet, x))
-                            {
-                                w_queue.Enqueue(new QueueItem { Node = to, Vector = x });
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        public void PrintLastG(ProgramAst prg)
-        {
-            IaNode node = prg.Graph["main"]; // pro pokusy to ted staci :-)... pak se to musi rozsirit i na inicializovane VAR
-
-            while (node != null)
-            {
-                IaEdge edge = node.Next; // zatim jde o linearni funkci
-
-                if (edge != null)
-                {
-                    node = edge.To;
-                }
-                else
-                {
-                    PrintMatrix(node.GeneratorSet);
-                    node = null;
-                }
-            }
-
-        }
-
-        private void PrintMatrix(LeadVector[] m)
-        {
-            if (m[0] == null)
-            {
-                Console.WriteLine("null");
+                Console.WriteLine("prazdna mnozina");
                 return;
             }
 
-            int k = m.Length;
-            int l = m[0].Vr.Length;
+            int k = GArr.Length;
+            int l = GArr[0].Vr.Length;
 
             for (int j = 0; j < l; j++)
             {
                 int i = 0;
-                while ((i < k) && (m[i] != null))
+                while ((i < k) && (GArr[i] != null))
                 {
-                    Console.Write("{0} ", m[i].Vr[j]);
+                    Console.Write("{0} ", GArr[i].Vr[j]);
                     i++;
                 }
                 Console.WriteLine();
             }
             Console.WriteLine();
         }
-
     }
 }

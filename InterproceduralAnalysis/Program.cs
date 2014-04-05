@@ -14,15 +14,18 @@ namespace InterproceduralAnalysis
         private static string programFile;
         private static bool printLA;
         private static bool printSA;
-        private static bool test;
+        private static bool printIAM;
+        private static bool printIAG;
 
         static int Main(string[] args)
         {
             //programName = args[0];
-            programFile = @"c:/github/InterproceduralAnalysis/InterproceduralAnalysis/program.txt";
+            programFile = @"D:/projects/github/InterproceduralAnalysis/InterproceduralAnalysis/program.txt";
             //printLA = arg[1];
             printLA = false;
             printSA = false;
+            printIAM = true;
+            printIAG = true;
 
             if (programFile == null)
             {
@@ -65,11 +68,11 @@ namespace InterproceduralAnalysis
             gg.CreateGraph(prg);
 
             int w = 3;
-            InterproceduralAnalyzer ia = new InterproceduralAnalyzer(w, prg.VarsDecl.Count);
-            ia.CreateTransitionMatrixes(prg);
-            ia.CreateGeneratorSets(prg);
-            ia.PrintLastG(prg);
+            int n = prg.VarsDecl.Count;
+            InterproceduralAnalyzer ia = new InterproceduralAnalyzer(w, n, printIAM, printIAG);
+            ia.Analyze(prg);
 
+            Console.WriteLine("Konec analyzy... stiskni klavesu.");
             Console.ReadKey();
             return 0;
         }

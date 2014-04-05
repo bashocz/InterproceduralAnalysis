@@ -212,7 +212,9 @@ namespace InterproceduralAnalysis
 
     class IaNode
     {
-        public LeadVector[] GeneratorSet { get; set; }
+        public GeneratorSet GeneratorSet { get; set; }
+
+        public string Name { get; set; }
 
         public IaEdge Next { get; set; } // for all statements
 
@@ -235,12 +237,9 @@ namespace InterproceduralAnalysis
 
     class IaEdge
     {
-        public IaEdge()
-        {
-            MatrixSet = new List<long[][]>();
-        }
+        public TransitionMatrixSet MatrixSet { get; set; }
 
-        public List<long[][]> MatrixSet { get; private set; }
+        public string Name { get; set; }
 
         public BaseAst Ast { get; set; }
 
@@ -252,61 +251,5 @@ namespace InterproceduralAnalysis
     {
         public IaNode Node { get; set; }
         public LeadVector Vector { get; set; }
-    }
-
-    class LeadVector
-    {
-        private readonly long[] vr;
-        private readonly int li;
-
-        public LeadVector(long[] vr)
-        {
-            this.vr = vr;
-            li = GetLeadIndex(vr);
-        }
-
-        private int GetLeadIndex(long[] vr)
-        {
-            int k = vr.Length, li = -1;
-            for (int i = 0; i < k; i++)
-                if (vr[i] != 0)
-                {
-                    li = i;
-                    break;
-                }
-            return li;
-        }
-
-        public long[] Vr
-        {
-            get { return vr; }
-        }
-
-        public int Lidx
-        {
-            get { return li; }
-        }
-
-        public long Lentry   // jen jsem to prejmenovala dle terminologie toho clanku
-        {
-            get
-            {
-                if ((li >= 0) && (li < vr.Length))
-                    return vr[li];
-                return 0;
-            }
-        }
-    }
-
-    class FncItem
-    {
-        public string FncName { get; set; }
-        public IaNode Node { get; set; }
-
-        public FncItem(string fncName, IaNode node)
-        {
-            this.FncName = fncName;
-            this.Node = node;
-        }
     }
 }
