@@ -20,7 +20,8 @@ namespace InterproceduralAnalysis
                 throw new ApplicationException();
 
             this.var_w = w;
-            this.var_m = (long)Math.Pow(2, w);
+            //this.var_m = (long)Math.Pow(2, w);
+            this.var_m = 1L << w;
             this.var_n = n + 1; // velikost matice G... +1 pro konstanty
 
             prime = GetPrime(var_w);
@@ -352,7 +353,8 @@ namespace InterproceduralAnalysis
             long d;
             r = Reduction(tvr.Lentry, out d);
 
-            int x = (int)Math.Pow(2, var_w - r);
+            //int x = (int)Math.Pow(2, var_w - r);
+            long x = 1L << (var_w - r);
 
             int l = tvr.Vr.Length;
             long[] wr = new long[l];
