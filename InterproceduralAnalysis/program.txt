@@ -3,7 +3,7 @@
 function main(){
   a = 3 + 2*a - 4*b + 6*c;
   b = 4 - a;
-  if ( b > 0 )
+  if ( b > c++ )
   {
     c = 4 + 6*a + 7*b - c;
     a++;

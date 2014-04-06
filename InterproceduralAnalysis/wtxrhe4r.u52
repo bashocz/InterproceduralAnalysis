@@ -504,39 +504,6 @@ namespace InterproceduralAnalysis
             return !isError;
         }
 
-        private bool ProceedPartCondition(OperatorAst op, long[][] mtx, List<string> vars)
-        {
-            bool isError = false;
-            if (op != null)
-            {
-                if ((op.Token == TokenTypes.PlusPlus) || (op.Token == TokenTypes.MinusMinus))
-                {
-                    int vu;
-                    long c;
-                    isError = !ProceedUnary(op, mtx, vars, out vu, out c);
-                }
-                if (!isError && (op.Left is OperatorAst))
-                    isError = !ProceedPartCondition(op.Left as OperatorAst, mtx, vars);
-                if (!isError && (op.Right is OperatorAst))
-                    isError = !ProceedPartCondition(op.Right as OperatorAst, mtx, vars);
-            }
-
-            return !isError;
-        }
-
-        private bool ProceedCondition(ConditionAst cond, long[][] mtx, List<string> vars)
-        {
-            bool isError = false;
-            if (cond != null)
-            {
-                OperatorAst op = cond.Condition as OperatorAst;
-                if (op != null)
-                    isError = !ProceedPartCondition(op, mtx, vars);
-            }
-
-            return !isError;
-        }
-
         private void AddMatrixesForUnknownExpr(int vi)
         {
             // neznamy vyraz
@@ -589,13 +556,17 @@ namespace InterproceduralAnalysis
                         AddMatrixesForUnknownExpr(vu);
                     }
                 }
-            }
-            else if (parent.Ast is ConditionAst)
-            {
-                long[][] mtx = b.GetIdentity(var_n);
-                if (ProceedCondition(parent.Ast as ConditionAst, mtx, vars))
+                else if (expr is ConditionAst)
                 {
-                    TMatrixes.Add(mtx);
+                    long[][] mtx = b.GetIdentity(var_n);
+                    if (ProceedCondition(expr as ConditionAst, mtx, vars))
+                    {
+                        TMatrixes.Add(mtx);
+                    }
+                    else
+                    {
+                        AddMatrixesForUnknownExpr(vu);
+                    }
                 }
                 else
                 {

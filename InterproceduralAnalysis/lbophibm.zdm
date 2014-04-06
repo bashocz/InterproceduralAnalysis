@@ -504,24 +504,9 @@ namespace InterproceduralAnalysis
             return !isError;
         }
 
-        private bool ProceedPartCondition(OperatorAst op, long[][] mtx, List<string> vars)
+        private bool ProceedPartCondition(BaseAst node, long[][] mtx, List<string> vars)
         {
-            bool isError = false;
-            if (op != null)
-            {
-                if ((op.Token == TokenTypes.PlusPlus) || (op.Token == TokenTypes.MinusMinus))
-                {
-                    int vu;
-                    long c;
-                    isError = !ProceedUnary(op, mtx, vars, out vu, out c);
-                }
-                if (!isError && (op.Left is OperatorAst))
-                    isError = !ProceedPartCondition(op.Left as OperatorAst, mtx, vars);
-                if (!isError && (op.Right is OperatorAst))
-                    isError = !ProceedPartCondition(op.Right as OperatorAst, mtx, vars);
-            }
-
-            return !isError;
+            throw new NotImplementedException();
         }
 
         private bool ProceedCondition(ConditionAst cond, long[][] mtx, List<string> vars)
@@ -529,9 +514,7 @@ namespace InterproceduralAnalysis
             bool isError = false;
             if (cond != null)
             {
-                OperatorAst op = cond.Condition as OperatorAst;
-                if (op != null)
-                    isError = !ProceedPartCondition(op, mtx, vars);
+
             }
 
             return !isError;
