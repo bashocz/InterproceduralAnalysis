@@ -405,7 +405,7 @@ namespace InterproceduralAnalysis
             return !isError;
         }
 
-        private bool ProceedUnary(OperatorAst op, long[][] mtx, int vi, List<string> vars)
+        private bool ProceedUnary(OperatorAst op, int sign, long[][] mtx, int vi, List<string> vars)
         {
             int vu;
             long c;
@@ -413,10 +413,10 @@ namespace InterproceduralAnalysis
 
             if (!(isError = !ProceedUnary(op, mtx, vars, out vu, out c)))
             {
-                if (vu == vi) // pokud jsou stejne => je treba zvysit o 1
-                {
-                    mtx[vi][vi] = (mtx[vi][vi] + 1) % var_m;
-                }
+                long s = 1;
+                if (sign < 0)
+                    s = var_m - 1;
+                mtx[vu][vi] = (mtx[vu][vi] + s) % var_m;
                 if ((op.Right != null) && (op.Right.AstType == AstNodeTypes.Variable))
                 {
                     if (vu != vi) // pouze pokud jsou promenne rozdilne
@@ -444,7 +444,7 @@ namespace InterproceduralAnalysis
             }
             else if ((node.AstType == AstNodeTypes.Operator) && ((node.Token == TokenTypes.PlusPlus) || (node.Token == TokenTypes.MinusMinus)))
             {
-                isError = !ProceedUnary(node as OperatorAst, mtx, vi, vars);
+                isError = !ProceedUnary(node as OperatorAst, sign, mtx, vi, vars);
             }
             else
             {
