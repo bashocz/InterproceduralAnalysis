@@ -420,7 +420,13 @@ namespace InterproceduralAnalysis
                 if ((op.Right != null) && (op.Right.AstType == AstNodeTypes.Variable))
                 {
                     if (vu != vi) // pouze pokud jsou promenne rozdilne
-                        mtx[0][vi] = (mtx[0][vi] + c) % var_m; // ++x => zvysi se o 1 ihned => ma vliv na promennou prirazeni
+                    {
+                        if (((c == 1) && (s == 1)) || ((c > 1) && (s > 1)))
+                            s = 1;
+                        else
+                            s = var_m - 1;
+                        mtx[0][vi] = (mtx[0][vi] + s) % var_m; // ++x => zvysi se o 1 ihned => ma vliv na promennou prirazeni
+                    }
                 }
             }
 
