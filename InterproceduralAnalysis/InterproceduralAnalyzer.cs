@@ -134,15 +134,6 @@ namespace InterproceduralAnalysis
                 else
                 {
                     // algoritmus 4
-                    List<long[][]> mtxs = new List<long[][]>();
-                    int i = 0;
-                    while (from.FunctionGSet.GArr[i] != null)
-                    {
-                        mtxs.Add(bfm.VectorToMatrix(from.FunctionGSet.GArr[i].Vr, bg.var_n));
-                        i++;
-                    }
-                    if (mtxs.Count == 0)
-                        throw new ApplicationException();
 
                     foreach (IaEdge edge in fncCallEdges)
                     {
@@ -151,9 +142,6 @@ namespace InterproceduralAnalysis
 
                         if (edge.Ast.TokenText == from.FncName)
                         {
-                            edge.MatrixSet.TMatrixes.Clear();
-                            edge.MatrixSet.TMatrixes.AddRange(mtxs);
-
                             IaNode to = edge.To;
 
                             foreach (LeadVector vector in edge.From.FunctionGSet.GArr)
@@ -163,7 +151,7 @@ namespace InterproceduralAnalysis
                                 // v podstate algoritmus 2 - slo by to trosku optimalizovat :-)
                                 foreach (long[][] a_mtx in edge.MatrixSet.TMatrixes)
                                 {
-                                    long[][] mtx = bg.MatrixMultiMatrix(a_mtx, matrix, bfm.var_m);
+                                    long[][] mtx = bg.MatrixMultiMatrix(a_mtx, pair.Matrix, bfm.var_m);
                                     long[] xi = bg.MatrixToVector(mtx);
                                     LeadVector x = new LeadVector(xi);
                                     if (x.Lidx >= 0) // neni to nulovy vektor
@@ -183,6 +171,32 @@ namespace InterproceduralAnalysis
                 }
             }
             // algoritmus 5
+            foreach (string fncName in prg.LastNode.Keys)
+            {
+                IaNode last = prg.LastNode[fncName];
+
+                List<long[][]> mtxs = new List<long[][]>();
+                int i = 0;
+                while (last.FunctionGSet.GArr[i] != null)
+                {
+                    mtxs.Add(bfm.VectorToMatrix(last.FunctionGSet.GArr[i].Vr, bg.var_n));
+                    i++;
+                }
+                if (mtxs.Count == 0)
+                    throw new ApplicationException();
+
+                foreach (IaEdge edge in fncCallEdges)
+                {
+                    if ((edge.Ast == null) || (edge.Ast.AstType != AstNodeTypes.FunctionCall))
+                        throw new ApplicationException();
+
+                    if (edge.Ast.TokenText == last.FncName)
+                    {
+                        edge.MatrixSet.TMatrixes.Clear();
+                        edge.MatrixSet.TMatrixes.AddRange(mtxs);
+                    }
+                }
+            }
         }
 
         #endregion Creating Function Call Matrixes
