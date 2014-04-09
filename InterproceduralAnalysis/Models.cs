@@ -214,6 +214,8 @@ namespace InterproceduralAnalysis
     {
         public GeneratorSet GeneratorSet { get; set; }
 
+        public GeneratorSet FunctionGSet { get; set; }
+
         public string Name { get; set; }
 
         public IaEdge Next { get; set; } // for all statements
@@ -247,9 +249,15 @@ namespace InterproceduralAnalysis
         public IaNode To { get; set; }
     }
 
-    class QueueItem
+    class NodeVector
     {
         public IaNode Node { get; set; }
         public LeadVector Vector { get; set; }
+    }
+
+    class NodeMatrix
+    {
+        public IaNode Node { get; set; }
+        public long[][] Matrix { get; set; }
     }
 }

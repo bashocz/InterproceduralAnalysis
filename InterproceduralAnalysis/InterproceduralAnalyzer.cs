@@ -7,15 +7,11 @@ namespace InterproceduralAnalysis
 {
     class InterproceduralAnalyzer
     {
-        private readonly BaseFunctions b;
-
-        private readonly int var_n;
-        private readonly long var_m;
+        private readonly BaseFunctions bfm;
+        private readonly BaseFunctions bg;
 
         private readonly bool printM;
         private readonly bool printG;
-
-        private Queue<QueueItem> w_queue;
 
         public InterproceduralAnalyzer(int w, int n, bool printGM, bool printGG)
         {
@@ -25,22 +21,18 @@ namespace InterproceduralAnalysis
             this.printM = printGM;
             this.printG = printGG;
 
-            b = new BaseFunctions(w, n);
-
-            var_n = b.var_n;
-            var_m = b.var_m;
-
-            w_queue = new Queue<QueueItem>();
+            bfm = new BaseFunctions(w, n * n);
+            bg = new BaseFunctions(w, n);
         }
 
         #region Creating Transition Matrixes
 
         private void CreateTransitionMatrixes(ProgramAst prg)
         {
-            IaNode node = prg.Graph["main"]; // pro pokusy to ted staci :-)... pak se to musi rozsirit i na inicializovane VAR
-
             Queue<IaNode> q = new Queue<IaNode>();
-            q.Enqueue(node);
+            foreach (string name in prg.OrigFncs.Keys)
+                q.Enqueue(prg.Graph[name]);
+
             while (q.Count > 0)
             {
                 IaNode n = q.Dequeue();
@@ -50,7 +42,7 @@ namespace InterproceduralAnalysis
                     {
                         if (edge.MatrixSet == null)
                         {
-                            var mtx = new TransitionMatrixSet(edge, b);
+                            var mtx = new TransitionMatrixSet(edge, bg);
                             mtx.GetMatrix(prg.Vars);
                             edge.MatrixSet = mtx;
 
@@ -66,13 +58,72 @@ namespace InterproceduralAnalysis
 
         #endregion Creating Transition Matrixes
 
+        #region Creating Function Call Matrixes
+
+        private void CreateEmptyFunctionG(ProgramAst prg)
+        {
+            foreach (IaNode node in prg.Graph.Values)
+            {
+                Queue<IaNode> q = new Queue<IaNode>();
+                q.Enqueue(node);
+                while (q.Count > 0)
+                {
+                    IaNode n = q.Dequeue();
+                    if (n.GeneratorSet == null)
+                    {
+                        n.GeneratorSet = new GeneratorSet(n, bg);
+                        foreach (IaEdge edge in n.Edges)
+                            if (edge.To.GeneratorSet == null)
+                                q.Enqueue(edge.To);
+                    }
+                }
+            }
+        }
+
+        private void CreateFunctionMatrixes(ProgramAst prg)
+        {
+            CreateEmptyFunctionG(prg);
+
+            Queue<NodeMatrix> w_queue = new Queue<NodeMatrix>();
+            foreach (string name in prg.OrigFncs.Keys)
+                w_queue.Enqueue(new NodeMatrix { Node = prg.Graph[name], Matrix = bfm.GetIdentity(bfm.var_n) });
+
+            while (w_queue.Count > 0)
+            {
+                NodeMatrix pair = w_queue.Dequeue();
+
+                IaNode from = pair.Node;
+                if ((from.Next != null) || (from.IsTrue != null) || (from.IsFalse != null))
+                {
+                    foreach (IaEdge edge in from.Edges)
+                    {
+                        if (edge.Ast.AstType != AstNodeTypes.FunctionCall)
+                        {
+                            // algoritmus 2
+                        }
+                        else
+                        {
+                            // algoritmus 3
+                        }
+                    }
+                }
+                else
+                {
+                    // algoritmus 4
+                }
+            }
+            // algoritmus 5
+        }
+
+        #endregion Creating Function Call Matrixes
+
         #region Creating Generator Sets
 
-        private void AddIdentityVectors(Queue<QueueItem> w_queue, IaNode node)
+        private void AddIdentityVectors(Queue<NodeVector> w_queue, IaNode node)
         {
-            long[][] id = b.GetIdentity(var_n);
-            for (int i = 0; i < var_n; i++)
-                w_queue.Enqueue(new QueueItem { Node = node, Vector = new LeadVector(id[i]) });
+            long[][] id = bg.GetIdentity(bg.var_n);
+            for (int i = 0; i < bg.var_n; i++)
+                w_queue.Enqueue(new NodeVector { Node = node, Vector = new LeadVector(id[i]) });
         }
 
         private void CreateEmptyG(ProgramAst prg)
@@ -86,7 +137,7 @@ namespace InterproceduralAnalysis
                     IaNode n = q.Dequeue();
                     if (n.GeneratorSet == null)
                     {
-                        n.GeneratorSet = new GeneratorSet(n, b);
+                        n.GeneratorSet = new GeneratorSet(n, bg);
                         foreach (IaEdge edge in n.Edges)
                             if (edge.To.GeneratorSet == null)
                                 q.Enqueue(edge.To);
@@ -98,22 +149,23 @@ namespace InterproceduralAnalysis
         private void CreateGeneratorSets(ProgramAst prg)
         {
             CreateEmptyG(prg);
-            IaNode first = prg.Graph["main"]; // pro pokusy to ted staci :-)... pak se to musi rozsirit i na inicializovane VAR
-            AddIdentityVectors(w_queue, first);
+
+            Queue<NodeVector> w_queue = new Queue<NodeVector>();
+            foreach (string name in prg.OrigFncs.Keys)
+                AddIdentityVectors(w_queue, prg.Graph[name]);
 
             while (w_queue.Count > 0)
             {
-                QueueItem pair = w_queue.Dequeue();
+                NodeVector pair = w_queue.Dequeue();
 
                 IaNode from = pair.Node;
-                // zde musi byt kontrola, zda se nejedna o volani funkce... pokud ano, je treba pridat hranu do W
                 foreach (IaEdge edge in from.Edges)
                 {
                     IaNode to = edge.To;
 
                     foreach (long[][] a_mtx in edge.MatrixSet.TMatrixes)
                     {
-                        long[] xi = b.MatrixMultiVector(a_mtx, pair.Vector.Vr, var_m);
+                        long[] xi = bg.MatrixMultiVector(a_mtx, pair.Vector.Vr, bg.var_m);
                         LeadVector x = new LeadVector(xi);
                         if (x.Lidx >= 0) // neni to nulovy vektor
                         {
@@ -122,7 +174,7 @@ namespace InterproceduralAnalysis
                                 if (printG)
                                     to.GeneratorSet.Print();
 
-                                w_queue.Enqueue(new QueueItem { Node = to, Vector = x });
+                                w_queue.Enqueue(new NodeVector { Node = to, Vector = x });
                             }
                         }
                     }
@@ -135,6 +187,7 @@ namespace InterproceduralAnalysis
         public void Analyze(ProgramAst prg)
         {
             CreateTransitionMatrixes(prg);
+            CreateFunctionMatrixes(prg);
             CreateGeneratorSets(prg);
         }
     }
