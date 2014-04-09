@@ -206,6 +206,12 @@ namespace InterproceduralAnalysis
         {
             get { return graph ?? (graph = new Dictionary<string, IaNode>()); }
         }
+
+        private Dictionary<string, IaNode> lastNode;
+        public Dictionary<string, IaNode> LastNode
+        {
+            get { return lastNode ?? (lastNode = new Dictionary<string, IaNode>()); }
+        }
     }
 
     // modely grafu
@@ -215,6 +221,8 @@ namespace InterproceduralAnalysis
         public GeneratorSet GeneratorSet { get; set; }
 
         public GeneratorSet FunctionGSet { get; set; }
+
+        public string FncName { get; set; }
 
         public string Name { get; set; }
 

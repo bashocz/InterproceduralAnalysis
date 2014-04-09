@@ -60,7 +60,7 @@ namespace InterproceduralAnalysis
 
         #region Creating Function Call Matrixes
 
-        private void CreateEmptyFunctionG(ProgramAst prg)
+        private void CreateEmptyFunctionG(ProgramAst prg, List<IaEdge> fncCallEdges)
         {
             foreach (IaNode node in prg.Graph.Values)
             {
@@ -73,8 +73,13 @@ namespace InterproceduralAnalysis
                     {
                         n.FunctionGSet = new GeneratorSet(n, bfm);
                         foreach (IaEdge edge in n.Edges)
+                        {
+                            if ((edge.Ast != null) && (edge.Ast.AstType == AstNodeTypes.FunctionCall))
+                                fncCallEdges.Add(edge);
+
                             if (edge.To.FunctionGSet == null)
                                 q.Enqueue(edge.To);
+                        }
                     }
                 }
             }
@@ -82,13 +87,12 @@ namespace InterproceduralAnalysis
 
         private void CreateFunctionMatrixes(ProgramAst prg)
         {
-            CreateEmptyFunctionG(prg);
+            List<IaEdge> fncCallEdges = new List<IaEdge>();
+            CreateEmptyFunctionG(prg, fncCallEdges);
 
             Queue<NodeMatrix> w_queue = new Queue<NodeMatrix>();
             foreach (string name in prg.OrigFncs.Keys)
                 w_queue.Enqueue(new NodeMatrix { Node = prg.Graph[name], Matrix = bfm.GetIdentity(bg.var_n) });
-
-            List<IaEdge> fncCallEdges = new List<IaEdge>();
 
             while (w_queue.Count > 0)
             {
@@ -124,13 +128,58 @@ namespace InterproceduralAnalysis
                         else
                         {
                             // algoritmus 3
-                            fncCallEdges.Add(edge);
                         }
                     }
                 }
                 else
                 {
                     // algoritmus 4
+                    List<long[][]> mtxs = new List<long[][]>();
+                    int i = 0;
+                    while (from.FunctionGSet.GArr[i] != null)
+                    {
+                        mtxs.Add(bfm.VectorToMatrix(from.FunctionGSet.GArr[i].Vr, bg.var_n));
+                        i++;
+                    }
+                    if (mtxs.Count == 0)
+                        throw new ApplicationException();
+
+                    foreach (IaEdge edge in fncCallEdges)
+                    {
+                        if ((edge.Ast == null) || (edge.Ast.AstType != AstNodeTypes.FunctionCall))
+                            throw new ApplicationException();
+
+                        if (edge.Ast.TokenText == from.FncName)
+                        {
+                            edge.MatrixSet.TMatrixes.Clear();
+                            edge.MatrixSet.TMatrixes.AddRange(mtxs);
+
+                            IaNode to = edge.To;
+
+                            foreach (LeadVector vector in edge.From.FunctionGSet.GArr)
+                            {
+                                long[][] matrix = bfm.VectorToMatrix(vector.Vr, bg.var_n);
+
+                                // v podstate algoritmus 2 - slo by to trosku optimalizovat :-)
+                                foreach (long[][] a_mtx in edge.MatrixSet.TMatrixes)
+                                {
+                                    long[][] mtx = bg.MatrixMultiMatrix(a_mtx, matrix, bfm.var_m);
+                                    long[] xi = bg.MatrixToVector(mtx);
+                                    LeadVector x = new LeadVector(xi);
+                                    if (x.Lidx >= 0) // neni to nulovy vektor
+                                    {
+                                        if (to.FunctionGSet.AddVector(x))
+                                        {
+                                            if (printG)
+                                                to.FunctionGSet.Print();
+
+                                            w_queue.Enqueue(new NodeMatrix { Node = to, Matrix = mtx });
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
             // algoritmus 5
@@ -351,27 +400,23 @@ namespace InterproceduralAnalysis
             return vector;
         }
 
-        //public long[][] ConvertVectorToMatrix(long[] vector)
-        //{
-        //    long[][] matrix = new long[var_n][];
+        public long[][] VectorToMatrix(long[] vector, int n)
+        {
+            if (vector.Length < n)
+                throw new ApplicationException();
 
-        //    for (int i = 0; i < var_n; i++)
-        //    {
-        //        for (int j = 0; j < var_n; j++)
-        //        {
-        //            matrix[i][j] = vector[j + i * var_n];
-        //        }
-        //    }
+            long[][] matrix = GetMArray(n, n);
 
-        //    return matrix;
-        //}
+            for (int i = 0; i < n; i++)
+            {
+                for (int j = 0; j < n; j++)
+                {
+                    matrix[i][j] = vector[j + i * n];
+                }
+            }
 
-        //public RMatrix(int w, int n)
-        //    : base(w, n)
-        //{
-        //    mx = GetEmpty();
-        //    tmx = new TempVector[mx.Length];
-        //}
+            return matrix;
+        }
     }
 
     class TransitionMatrixSet
