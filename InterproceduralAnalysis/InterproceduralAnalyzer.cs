@@ -99,7 +99,7 @@ namespace InterproceduralAnalysis
                 {
                     foreach (IaEdge edge in from.Edges)
                     {
-                        if (edge.Ast.AstType != AstNodeTypes.FunctionCall)
+                        if ((edge.Ast == null) || (edge.Ast.AstType != AstNodeTypes.FunctionCall))
                         {
                             IaNode to = edge.To;
 
