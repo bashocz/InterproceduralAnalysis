@@ -19,6 +19,15 @@ namespace InterproceduralAnalysis
 
         static int Main(string[] args)
         {
+            TestLR test = new TestLR();
+            test.Testuj();
+            Console.ReadKey();
+            return 0;
+
+
+
+
+
             //programName = args[0];
             programFile = @"D:/projects/github/InterproceduralAnalysis/InterproceduralAnalysis/program.txt";
             //printLA = arg[1];
