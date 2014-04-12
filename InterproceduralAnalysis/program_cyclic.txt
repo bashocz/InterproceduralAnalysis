@@ -1,0 +1,33 @@
+﻿var a,b,c;
+
+function main(){
+  b = 4 - a++;
+  fncA();
+  a = 3 + 4*a - --b + 6*c;
+  if ( b > c++ )
+  {
+    c = 4 + 6*a + 7*b - c;
+    a++;
+    b--;
+  }
+  b = 4*a + b - 6*c;
+}
+
+function fncA()
+{
+  while (a > b)
+  {
+    a--;
+	b++;
+  }
+  fncB();
+}
+
+function fncB()
+{
+  if (a < b)
+  {
+    c = a;
+  }
+  fncA();
+}

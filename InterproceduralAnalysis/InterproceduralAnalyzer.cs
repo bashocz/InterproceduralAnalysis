@@ -144,8 +144,10 @@ namespace InterproceduralAnalysis
                         {
                             IaNode to = edge.To;
 
-                            foreach (LeadVector vector in edge.From.FunctionGSet.GArr)
+                            int i = 0;
+                            while (edge.From.FunctionGSet.GArr[i] != null)
                             {
+                                LeadVector vector = edge.From.FunctionGSet.GArr[i];
                                 long[][] matrix = bfm.VectorToMatrix(vector.Vr, bg.var_n);
 
                                 // v podstate algoritmus 2 - slo by to trosku optimalizovat :-)
@@ -165,6 +167,7 @@ namespace InterproceduralAnalysis
                                         }
                                     }
                                 }
+                                i++;
                             }
                         }
                     }
