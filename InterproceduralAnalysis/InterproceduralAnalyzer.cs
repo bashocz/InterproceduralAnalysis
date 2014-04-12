@@ -150,21 +150,17 @@ namespace InterproceduralAnalysis
                                 LeadVector vector = edge.From.FunctionGSet.GArr[i];
                                 long[][] matrix = bfm.VectorToMatrix(vector.Vr, bg.var_n);
 
-                                // v podstate algoritmus 2 - slo by to trosku optimalizovat :-)
-                                foreach (long[][] a_mtx in edge.MatrixSet.TMatrixes)
+                                long[][] mtx = bg.MatrixMultiMatrix(pair.Matrix, matrix, bfm.var_m);
+                                long[] xi = bg.MatrixToVector(mtx);
+                                LeadVector x = new LeadVector(xi);
+                                if (x.Lidx >= 0) // neni to nulovy vektor
                                 {
-                                    long[][] mtx = bg.MatrixMultiMatrix(a_mtx, pair.Matrix, bfm.var_m);
-                                    long[] xi = bg.MatrixToVector(mtx);
-                                    LeadVector x = new LeadVector(xi);
-                                    if (x.Lidx >= 0) // neni to nulovy vektor
+                                    if (to.FunctionGSet.AddVector(x))
                                     {
-                                        if (to.FunctionGSet.AddVector(x))
-                                        {
-                                            if (printG)
-                                                to.FunctionGSet.Print();
+                                        if (printG)
+                                            to.FunctionGSet.Print();
 
-                                            w_queue.Enqueue(new NodeMatrix { Node = to, Matrix = mtx });
-                                        }
+                                        w_queue.Enqueue(new NodeMatrix { Node = to, Matrix = mtx });
                                     }
                                 }
                                 i++;
