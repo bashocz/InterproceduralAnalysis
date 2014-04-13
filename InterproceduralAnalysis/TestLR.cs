@@ -17,11 +17,28 @@ namespace InterproceduralAnalysis
 
         private void Default()
         {
-            b = new BaseFunctions(8, 2);
+            b = new BaseFunctions(3, 3);
             var_n = b.var_n;
             var_m = b.var_m;
 
-            A = new long[][] { new long[] { 1, 4, 2 }, new long[] { 0, 6, 7 }, new long[] { 0, 0, 3 } };
+            //A = new long[][] { new long[] { 1, 4, 2, 3 }, new long[] { 0, 6, 7, 4 }, new long[] { 0, 0, 3, 1 }, new long[] { 0, 0, 0, 5 } };
+            A = new long[var_n][];
+            IaNode node = new IaNode();
+            long[][] vectors = new long[][] { new long[] { 1, 4, 2, 3 }, new long[] { 0, 6, 7, 4 }, new long[] { 0, 0, 3, 1 }, new long[] { 0, 0, 0, 5 } };
+            node.GeneratorSet = new GeneratorSet(node, b);
+         
+            foreach (long[] vector in vectors)
+            {
+                LeadVector lv = new LeadVector(vector);
+                node.GeneratorSet.AddVector(lv);
+                node.GeneratorSet.Print();
+            }
+
+            for (int i = 0; i < var_n; i++)
+            {
+                A[i] = vectors[i];
+            }
+            PrintMatrix("A", A);
             T = b.GetIdentity(var_n);
         }
 
@@ -109,10 +126,6 @@ namespace InterproceduralAnalysis
                 t = A[i][pj];
                 A[i][pj] = A[i][di];
                 A[i][di] = t;
-
-                t = T[i][pj];
-                T[i][pj] = T[i][di];
-                T[i][di] = t;
             }
         }
 
@@ -130,8 +143,6 @@ namespace InterproceduralAnalysis
                 int pr; // r pivotu
 
                 GetPivot(A, di, out pi, out pj, out pd, out pr);
-
-                A[pi][pj] = pd; // redukce pivotu
 
                 ClearColumn(A, pi, pj, pd, pr);
 

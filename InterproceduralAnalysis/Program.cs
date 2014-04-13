@@ -23,13 +23,12 @@ namespace InterproceduralAnalysis
             test.Testuj();
             Console.ReadKey();
             return 0;
-
-
+            
 
 
 
             //programName = args[0];
-            programFile = @"D:/projects/github/InterproceduralAnalysis/InterproceduralAnalysis/program.txt";
+            programFile = @"C:\Users\Míša\Documents\Visual Studio 2010\Projects\InterproceduralAnalysis\InterproceduralAnalysis/program.txt";
             //printLA = arg[1];
             printLA = false;
             printSA = false;

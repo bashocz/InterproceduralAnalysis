@@ -1,13 +1,27 @@
 ﻿var a,b,c;
 
 function main(){
-  a = 3 + 4*a - --b + 6*c;
   b = 4 - a++;
+  fncA();
+}
+
+function fncA()
+{
+  if (a > b)
+  {
+    a--;
+  }
+  else
+  {
+    c = b - a;
+  }
+}
+
+/*a = 3 + 4*a - --b + 6*c;
   if ( b > c++ )
   {
     c = 4 + 6*a + 7*b - c;
     a++;
     b--;
   }
-  b = 4*a + b - 6*c;
-}
+  b = 4*a + b - 6*c;*/
