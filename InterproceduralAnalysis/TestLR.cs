@@ -17,11 +17,11 @@ namespace InterproceduralAnalysis
 
         private void Default()
         {
-            b = new BaseFunctions(8, 2);
+            b = new BaseFunctions(8, 3);
             var_n = b.var_n;
             var_m = b.var_m;
 
-            A = new long[][] { new long[] { 1, 4, 2 }, new long[] { 0, 6, 7 }, new long[] { 0, 0, 3 } };
+            A = new long[][] { new long[] { 1, 1, 4, 3 }, new long[] { 0, 0, 0, 0 }, new long[] { 0, 0, 0, 0 }, new long[] { 0, 0, 0, 0 } };
             T = b.GetIdentity(var_n);
         }
 
@@ -131,7 +131,8 @@ namespace InterproceduralAnalysis
 
                 GetPivot(A, di, out pi, out pj, out pd, out pr);
 
-                A[pi][pj] = pd; // redukce pivotu
+                if ((pi < 0) || (pj < 0)) // ve zbyvajici matici jiz neni nenulovy prvek
+                    break;
 
                 ClearColumn(A, pi, pj, pd, pr);
 
