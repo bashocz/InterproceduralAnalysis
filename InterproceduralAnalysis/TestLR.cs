@@ -21,7 +21,7 @@ namespace InterproceduralAnalysis
             var_n = b.var_n;
             var_m = b.var_m;
 
-            A = new long[][] { new long[] { 1, 1, 4, 3 }, new long[] { 0, 0, 0, 0 }, new long[] { 0, 0, 0, 0 }, new long[] { 0, 0, 0, 0 } };
+            A = new long[][] { new long[] { 1, 4, 2, 3 }, new long[] { 0, 6, 7, 4 }, new long[] { 0, 0, 3, 1 }, new long[] { 0, 0, 0, 5 } };
 
             b = new BaseFunctions(3, 3);
             var_n = b.var_n;
