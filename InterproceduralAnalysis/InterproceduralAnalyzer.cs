@@ -245,7 +245,7 @@ namespace InterproceduralAnalysis
                 {
                     IaNode to = edge.To;
 
-                    if (edge.Ast.AstType == AstNodeTypes.FunctionCall)
+                    if ((edge.Ast != null) && (edge.Ast.AstType == AstNodeTypes.FunctionCall))
                     {
                         IaNode fncBegin = prg.Graph[edge.Ast.TokenText];
                         if (fncBegin.GeneratorSet.AddVector(pair.Vector))
