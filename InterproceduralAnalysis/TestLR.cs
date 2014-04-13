@@ -17,36 +17,34 @@ namespace InterproceduralAnalysis
 
         private void Default()
         {
-<<<<<<< HEAD
             b = new BaseFunctions(8, 3);
             var_n = b.var_n;
             var_m = b.var_m;
 
             A = new long[][] { new long[] { 1, 1, 4, 3 }, new long[] { 0, 0, 0, 0 }, new long[] { 0, 0, 0, 0 }, new long[] { 0, 0, 0, 0 } };
-=======
+
             b = new BaseFunctions(3, 3);
             var_n = b.var_n;
             var_m = b.var_m;
 
-            //A = new long[][] { new long[] { 1, 4, 2, 3 }, new long[] { 0, 6, 7, 4 }, new long[] { 0, 0, 3, 1 }, new long[] { 0, 0, 0, 5 } };
-            A = new long[var_n][];
-            IaNode node = new IaNode();
-            long[][] vectors = new long[][] { new long[] { 1, 4, 2, 3 }, new long[] { 0, 6, 7, 4 }, new long[] { 0, 0, 3, 1 }, new long[] { 0, 0, 0, 5 } };
-            node.GeneratorSet = new GeneratorSet(node, b);
+            //A = new long[var_n][];
+            //IaNode node = new IaNode();
+            //long[][] vectors = new long[][] { new long[] { 1, 4, 2, 3 }, new long[] { 0, 6, 7, 4 }, new long[] { 0, 0, 3, 1 }, new long[] { 0, 0, 0, 5 } };
+            //node.GeneratorSet = new GeneratorSet(node, b);
          
-            foreach (long[] vector in vectors)
-            {
-                LeadVector lv = new LeadVector(vector);
-                node.GeneratorSet.AddVector(lv);
-                node.GeneratorSet.Print();
-            }
+            //foreach (long[] vector in vectors)
+            //{
+            //    LeadVector lv = new LeadVector(vector);
+            //    node.GeneratorSet.AddVector(lv);
+            //    node.GeneratorSet.Print();
+            //}
 
-            for (int i = 0; i < var_n; i++)
-            {
-                A[i] = vectors[i];
-            }
-            PrintMatrix("A", A);
->>>>>>> e26023027b796c30736eccc944d145c99bf2fff9
+            //for (int i = 0; i < var_n; i++)
+            //{
+            //    A[i] = vectors[i];
+            //}
+            //PrintMatrix("A", A);
+
             T = b.GetIdentity(var_n);
         }
 
@@ -152,12 +150,9 @@ namespace InterproceduralAnalysis
 
                 GetPivot(A, di, out pi, out pj, out pd, out pr);
 
-<<<<<<< HEAD
                 if ((pi < 0) || (pj < 0)) // ve zbyvajici matici jiz neni nenulovy prvek
                     break;
 
-=======
->>>>>>> e26023027b796c30736eccc944d145c99bf2fff9
                 ClearColumn(A, pi, pj, pd, pr);
 
                 ClearRow(A, T, pi, pj, pd, pr);
