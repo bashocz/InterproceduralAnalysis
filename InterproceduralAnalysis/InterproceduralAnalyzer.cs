@@ -234,8 +234,7 @@ namespace InterproceduralAnalysis
             CreateEmptyG(prg);
 
             Queue<NodeVector> w_queue = new Queue<NodeVector>();
-            foreach (string name in prg.OrigFncs.Keys)
-                AddIdentityVectors(w_queue, prg.Graph[name]);
+            AddIdentityVectors(w_queue, prg.Graph["main"]);
 
             while (w_queue.Count > 0)
             {
@@ -245,6 +244,9 @@ namespace InterproceduralAnalysis
                 foreach (IaEdge edge in from.Edges)
                 {
                     IaNode to = edge.To;
+
+                    if (edge.Ast.AstType == AstNodeTypes.FunctionCall)
+                        w_queue.Enqueue(new NodeVector { Node = prg.Graph[edge.Ast.TokenText], Vector = pair.Vector });
 
                     foreach (long[][] a_mtx in edge.MatrixSet.TMatrixes)
                     {

@@ -19,16 +19,16 @@ namespace InterproceduralAnalysis
 
         static int Main(string[] args)
         {
-            TestLR test = new TestLR();
-            test.Testuj();
-            Console.ReadKey();
-            return 0;
+            //TestLR test = new TestLR();
+            //test.Testuj();
+            //Console.ReadKey();
+            //return 0;
             
 
 
 
             //programName = args[0];
-            programFile = @"C:\Users\Míša\Documents\Visual Studio 2010\Projects\InterproceduralAnalysis\InterproceduralAnalysis/program.txt";
+            programFile = @"d:\Projects\github\InterproceduralAnalysis\InterproceduralAnalysis\program.txt";
             //printLA = arg[1];
             printLA = false;
             printSA = false;
