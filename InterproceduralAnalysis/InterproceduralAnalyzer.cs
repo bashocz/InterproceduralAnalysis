@@ -246,7 +246,16 @@ namespace InterproceduralAnalysis
                     IaNode to = edge.To;
 
                     if (edge.Ast.AstType == AstNodeTypes.FunctionCall)
-                        w_queue.Enqueue(new NodeVector { Node = prg.Graph[edge.Ast.TokenText], Vector = pair.Vector });
+                    {
+                        IaNode fncBegin = prg.Graph[edge.Ast.TokenText];
+                        if (fncBegin.GeneratorSet.AddVector(pair.Vector))
+                        {
+                            if (printG)
+                                fncBegin.GeneratorSet.Print();
+
+                            w_queue.Enqueue(new NodeVector { Node = fncBegin, Vector = pair.Vector });
+                        }
+                    }
 
                     foreach (long[][] a_mtx in edge.MatrixSet.TMatrixes)
                     {

@@ -1,5 +1,5 @@
 ﻿var a,b,c;
-
+/*
 function main(){
   a = 3;
   b = 4 - a++;
@@ -7,11 +7,19 @@ function main(){
 }
 
 
-/*
+*/
 
 function main(){
   b = 4 - a++;
   fncA();
+  a = 3 + 4*a - --b + 6*c;
+  if ( b > c++ )
+  {
+    c = 4 + 6*a + 7*b - c;
+    a++;
+    b--;
+  }
+  b = 4*a + b - 6*c;
 }
 
 function fncA()
@@ -25,14 +33,3 @@ function fncA()
     c = b - a;
   }
 }
-
-a = 3 + 4*a - --b + 6*c;
-  if ( b > c++ )
-  {
-    c = 4 + 6*a + 7*b - c;
-    a++;
-    b--;
-  }
-  b = 4*a + b - 6*c;
-  
-  */
