@@ -167,14 +167,14 @@ namespace InterproceduralAnalysis
         {
             GeneratorSet g = new GeneratorSet(new IaNode { Name = "G" }, b);
 
-            for (int di = 0; di < (var_n - 1); di++) // indexy diagonaly
+            for (int di = 0; di < var_n; di++) // indexy diagonaly
             {
                 long d;
                 int r;
                 r = b.Reduction(A[di][di], out d);
 
                 long[] li = new long[var_n];
-                li[di] = (1L >> r);
+                li[di] = (1L << r);
 
                 long[] xi = b.MatrixMultiVector(T, li, var_m);
 

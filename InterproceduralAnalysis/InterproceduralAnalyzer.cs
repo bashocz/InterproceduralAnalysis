@@ -914,6 +914,9 @@ namespace InterproceduralAnalysis
 
         public bool AddVector(LeadVector tvr)
         {
+            if (tvr.Lidx < 0) // nulovy vektor
+                return false;
+
             int i = 0;
 
             while (GArr[i] != null)
