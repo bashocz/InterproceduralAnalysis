@@ -17,15 +17,14 @@ namespace InterproceduralAnalysis
 
         private void Default()
         {
-            b = new BaseFunctions(8, 3);
+            int w = 8;
+            int n = 2;
+
+            b = new BaseFunctions(w, n);
             var_n = b.var_n;
             var_m = b.var_m;
 
-            A = new long[][] { new long[] { 1, 4, 2, 3 }, new long[] { 0, 6, 7, 4 }, new long[] { 0, 0, 3, 1 }, new long[] { 0, 0, 0, 5 } };
-
-            b = new BaseFunctions(3, 3);
-            var_n = b.var_n;
-            var_m = b.var_m;
+            A = new long[][] { new long[] { 1, 4, 2 }, new long[] { 0, 6, 7 }, new long[] { 0, 0, 3 } };
 
             //A = new long[var_n][];
             //IaNode node = new IaNode();
@@ -135,10 +134,8 @@ namespace InterproceduralAnalysis
             }
         }
 
-        public void Testuj()
+        private void GetAT()
         {
-            Default();
-
             PrintMatrix("A", A);
             PrintMatrix("T", T);
 
@@ -164,6 +161,34 @@ namespace InterproceduralAnalysis
                 PrintMatrix("A", A);
                 PrintMatrix("T", T);
             }
+        }
+
+        private void GetG()
+        {
+            GeneratorSet g = new GeneratorSet(new IaNode { Name = "G" }, b);
+
+            for (int di = 0; di < (var_n - 1); di++) // indexy diagonaly
+            {
+                long d;
+                int r;
+                r = b.Reduction(A[di][di], out d);
+
+                long[] li = new long[var_n];
+                li[di] = (1L >> r);
+
+                long[] xi = b.MatrixMultiVector(T, li, var_m);
+
+                g.AddVector(new LeadVector(xi));
+            }
+            g.Print();
+        }
+
+        public void Testuj()
+        {
+            Default();
+
+            GetAT();
+            GetG();
         }
 
         public void PrintMatrix(string name, long[][] mtx)
