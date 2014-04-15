@@ -9,7 +9,7 @@ namespace InterproceduralAnalysis
     {
         private BaseFunctions b;
 
-        private int var_n;
+        private int var_w, var_n;
         private long var_m;
 
         private long[][] A;
@@ -17,10 +17,11 @@ namespace InterproceduralAnalysis
 
         private void Default()
         {
-            int w = 8;
+            int w = 4;
             int n = 1;
 
             b = new BaseFunctions(w, n);
+            var_w = b.var_w;
             var_n = b.var_n;
             var_m = b.var_m;
 
@@ -174,7 +175,7 @@ namespace InterproceduralAnalysis
                 r = b.Reduction(A[di][di], out d);
 
                 long[] li = new long[var_n];
-                li[di] = (1L << r);
+                li[di] = (1L << var_w - r);
 
                 long[] xi = b.MatrixMultiVector(T, li, var_m);
 
