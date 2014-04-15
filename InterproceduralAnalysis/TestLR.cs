@@ -18,19 +18,19 @@ namespace InterproceduralAnalysis
         private void Default()
         {
             int w = 8;
-            int n = 2;
+            int n = 1;
 
             b = new BaseFunctions(w, n);
             var_n = b.var_n;
             var_m = b.var_m;
 
-            A = new long[][] { new long[] { 1, 4, 2 }, new long[] { 0, 6, 7 }, new long[] { 0, 0, 3 } };
+            A = new long[][] { new long[] { 12, 14 }, new long[] { 6, 4 } };
 
             //A = new long[var_n][];
             //IaNode node = new IaNode();
             //long[][] vectors = new long[][] { new long[] { 1, 4, 2, 3 }, new long[] { 0, 6, 7, 4 }, new long[] { 0, 0, 3, 1 }, new long[] { 0, 0, 0, 5 } };
             //node.GeneratorSet = new GeneratorSet(node, b);
-         
+
             //foreach (long[] vector in vectors)
             //{
             //    LeadVector lv = new LeadVector(vector);
