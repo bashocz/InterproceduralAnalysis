@@ -222,6 +222,8 @@ namespace InterproceduralAnalysis
 
         public GeneratorSet FunctionGSet { get; set; }
 
+        public LinearEquations LinearEquations { get; set; }
+
         public string FncName { get; set; }
 
         public string Name { get; set; }
