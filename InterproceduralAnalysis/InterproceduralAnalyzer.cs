@@ -681,6 +681,7 @@ namespace InterproceduralAnalysis
                         break;
                     }
 
+                    sign = 1;
                     node = left;
                 }
                 else
@@ -1222,7 +1223,7 @@ namespace InterproceduralAnalysis
                 r = b.Reduction(A[di][di], out d);
 
                 long[] li = new long[var_n];
-                li[di] = (1L << var_w - r);
+                li[di] = (1L << (var_w - r));
 
                 long[] xi = b.MatrixMultiVector(T, li, var_m);
 
