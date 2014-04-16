@@ -26,7 +26,7 @@ namespace InterproceduralAnalysis
             //return -1;
 
             //programName = args[0];
-            programFile = @"d:\projects\github\InterproceduralAnalysis\InterproceduralAnalysis\program.txt";
+            programFile = @"C:\Users\Míša\Documents\Visual Studio 2010\Projects\InterproceduralAnalysis\InterproceduralAnalysis\program.txt";
             //printLA = arg[1];
             printLA = false;
             printSA = false;
@@ -74,7 +74,7 @@ namespace InterproceduralAnalysis
             GraphGenerator gg = new GraphGenerator();
             gg.CreateGraph(prg);
 
-            int w = 8;
+            int w = 3;
             int n = prg.VarsDecl.Count;
             InterproceduralAnalyzer ia = new InterproceduralAnalyzer(w, n, printIAM, printIAG, printIALE);
             ia.Analyze(prg);

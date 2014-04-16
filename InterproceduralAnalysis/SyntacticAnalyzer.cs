@@ -1005,8 +1005,8 @@ namespace InterproceduralAnalysis
                     }
                     continue;
                 }
-                if (!isCond && ((node.Token == TokenTypes.Multi) && (nodes[nodes.Count - 1].Token != TokenTypes.Number)))
-                    return BaseAst.GetErrorAstNode(string.Format("Pred nasobenim muze byt pouze cislo, radek {0}, sloupec {1}", node.TokenStartLine, node.TokenStartColumn));
+                //if (!isCond && ((node.Token == TokenTypes.Multi) && (nodes[nodes.Count - 1].Token != TokenTypes.Number)))
+                //    return BaseAst.GetErrorAstNode(string.Format("Pred nasobenim muze byt pouze cislo, radek {0}, sloupec {1}", node.TokenStartLine, node.TokenStartColumn));
 
                 nodes.Add(node);
 

@@ -5,45 +5,34 @@ using System.Text;
 
 namespace InterproceduralAnalysis
 {
-    class TestLR
+    class LinearEquations : GeneratorSet
     {
-        private BaseFunctions b;
-
-        private int var_w, var_n;
-        private long var_m;
+        private bool print;
 
         private long[][] A;
         private long[][] T;
 
-        private void Default()
+        public LinearEquations(IaNode parent, BaseFunctions b, bool print)
+            : base("GLa", parent, b)
         {
-            int w = 4;
-            int n = 1;
+            this.print = print;
+        }
 
-            b = new BaseFunctions(w, n);
-            var_w = b.var_w;
-            var_n = b.var_n;
-            var_m = b.var_m;
+        private void Preset()
+        {
+            A = b.GetEmpty(var_n);
 
-            A = new long[][] { new long[] { 12, 14 }, new long[] { 6, 4 } };
-
-            //A = new long[var_n][];
-            //IaNode node = new IaNode();
-            //long[][] vectors = new long[][] { new long[] { 1, 4, 2, 3 }, new long[] { 0, 6, 7, 4 }, new long[] { 0, 0, 3, 1 }, new long[] { 0, 0, 0, 5 } };
-            //node.GeneratorSet = new GeneratorSet(node, b);
-
-            //foreach (long[] vector in vectors)
-            //{
-            //    LeadVector lv = new LeadVector(vector);
-            //    node.GeneratorSet.AddVector(lv);
-            //    node.GeneratorSet.Print();
-            //}
-
-            //for (int i = 0; i < var_n; i++)
-            //{
-            //    A[i] = vectors[i];
-            //}
-            //PrintMatrix("A", A);
+            GeneratorSet g = parent.GeneratorSet;
+            int gi = 0;
+            for (int i = 0; i < var_n; i++)
+            {
+                if ((g.GArr[gi] != null) && (g.GArr[gi].Lidx == i))
+                {
+                    for (int j = 0; j < var_n; j++)
+                        A[i][j] = g.GArr[gi].Vr[j];
+                    gi++;
+                }
+             }
 
             T = b.GetIdentity(var_n);
         }
@@ -137,8 +126,11 @@ namespace InterproceduralAnalysis
 
         private void GetAT()
         {
-            PrintMatrix("A", A);
-            PrintMatrix("T", T);
+            if (print)
+            {
+                PrintMatrix("A", A);
+                PrintMatrix("T", T);
+            }
 
             for (int di = 0; di < (var_n - 1); di++) 
             {
@@ -159,15 +151,16 @@ namespace InterproceduralAnalysis
 
                 ExchangeRows(A, T, di, pj);
 
-                PrintMatrix("A", A);
-                PrintMatrix("T", T);
+                if (print)
+                {
+                    PrintMatrix("A", A);
+                    PrintMatrix("T", T);
+                }
             }
         }
 
         private void GetG()
         {
-            GeneratorSet g = new GeneratorSet(new IaNode { Name = "G" }, b);
-
             for (int di = 0; di < var_n; di++) 
             {
                 long d;
@@ -179,20 +172,31 @@ namespace InterproceduralAnalysis
 
                 long[] xi = b.MatrixMultiVector(T, li, var_m);
 
-                g.AddVector(new LeadVector(xi));
+                AddVector(new LeadVector(xi));
             }
-            g.Print();
+
+            if (print)
+                Print();
         }
 
-        public void Testuj()
+        public void CalculateLE()
         {
-            Default();
+            Preset();
+
+            if (print)
+                Console.WriteLine("Zacatek vypoctu linearnich rovnic v uzlu '{0}':", parent.Name);
 
             GetAT();
             GetG();
+
+            if (print)
+            {
+                Console.WriteLine("Konec vypoctu linearnich rovnic v uzlu '{0}':", parent.Name);
+                Console.WriteLine();
+            }
         }
 
-        public void PrintMatrix(string name, long[][] mtx)
+        private void PrintMatrix(string name, long[][] mtx)
         {
             Console.WriteLine("{0}:", name);
 
