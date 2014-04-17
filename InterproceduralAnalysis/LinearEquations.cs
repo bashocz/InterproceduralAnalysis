@@ -24,15 +24,12 @@ namespace InterproceduralAnalysis
 
             GeneratorSet g = parent.GeneratorSet;
             int gi = 0;
-            for (int i = 0; i < var_n; i++)
+            while (g.GArr[gi] != null)
             {
-                if ((g.GArr[gi] != null) && (g.GArr[gi].Lidx == i))
-                {
-                    for (int j = 0; j < var_n; j++)
-                        A[i][j] = g.GArr[gi].Vr[j];
-                    gi++;
-                }
-             }
+                for (int i = 0; i < var_n; i++)
+                    A[i][gi] = g.GArr[gi].Vr[i];
+                gi++;
+            }
 
             T = b.GetIdentity(var_n);
         }
@@ -132,7 +129,7 @@ namespace InterproceduralAnalysis
                 PrintMatrix("T", T);
             }
 
-            for (int di = 0; di < (var_n - 1); di++) 
+            for (int di = 0; di < (var_n - 1); di++)
             {
                 int pi, pj; // indexy pivotu
                 long pd; // d pivotu
@@ -140,7 +137,7 @@ namespace InterproceduralAnalysis
 
                 GetPivot(A, di, out pi, out pj, out pd, out pr);
 
-                if ((pi < 0) || (pj < 0)) 
+                if ((pi < 0) || (pj < 0))
                     break;
 
                 ClearColumn(A, pi, pj, pd, pr);
@@ -161,7 +158,7 @@ namespace InterproceduralAnalysis
 
         private void GetG()
         {
-            for (int di = 0; di < var_n; di++) 
+            for (int di = 0; di < var_n; di++)
             {
                 long d;
                 int r;
