@@ -24,7 +24,7 @@ namespace InterproceduralAnalysis
 
             GeneratorSet g = parent.GeneratorSet;
             int gi = 0;
-            while (g.GArr[gi] != null)
+            while ((gi < var_n) && (g.GArr[gi] != null))
             {
                 for (int i = 0; i < var_n; i++)
                     A[i][gi] = g.GArr[gi].Vr[i];
