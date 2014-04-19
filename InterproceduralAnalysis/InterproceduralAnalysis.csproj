@@ -57,6 +57,7 @@
     <Compile Include="SyntacticAnalyzer.cs" />
     <Compile Include="TestLR.cs" />
     <Compile Include="TransitionMatrixSet.cs" />
+    <Compile Include="WriteProgram.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="program_old.txt" />
