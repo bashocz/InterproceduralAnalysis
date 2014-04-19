@@ -17,15 +17,15 @@ namespace InterproceduralAnalysis
 
         private void Default()
         {
-            int w = 4;
-            int n = 1;
+            int w = 32;
+            int n = 2;
 
             b = new BaseFunctions(w, n);
             var_w = b.var_w;
             var_n = b.var_n;
             var_m = b.var_m;
 
-            A = new long[][] { new long[] { 12, 14 }, new long[] { 6, 4 } };
+            A = new long[][] { new long[] { 1, 0, 0 }, new long[] { 5, 0, 0 }, new long[] { 0, 38271610, 0 } };
 
             //A = new long[var_n][];
             //IaNode node = new IaNode();

@@ -1,12 +1,11 @@
 ﻿var a,b,c;
 
+
 function main(){
-  a = 3 + b++;
-  b = 4 - ++a;
+  a = 2 + 6*a + 8*b;
+  b = 4 + 2*a + 6*b;
   c = a++ + --b;
 }
-
-
 
 /*
 function main(){

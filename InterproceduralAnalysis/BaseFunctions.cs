@@ -54,6 +54,7 @@ namespace InterproceduralAnalysis
                 long idx = (long)(1L << i) % p;
                 a[idx] = i;
             }
+            a[0] = var_w;
             return a;
         }
 
