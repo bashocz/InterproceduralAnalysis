@@ -10,6 +10,11 @@ namespace InterproceduralAnalysis
     {
         private StreamWriter file;
 
+        private void WriteLinearEquations(LinearEquations le, string p)
+        {
+            // to-do dopsat vypis linearnich rovnic jako poznamky :-)
+        }
+
         private string GetExpr(BaseAst ast)
         {
             if (ast == null)
@@ -48,11 +53,14 @@ namespace InterproceduralAnalysis
         private void WriteOperator(OperatorAst ast, string p)
         {
             file.WriteLine("{0}{1};", p, GetExpr(ast));
+            WriteLinearEquations(null, p);
         }
 
         private void WriteIf(IfAst ast, string p)
         {
             file.WriteLine("{0}if ({1})", p, GetExpr(ast.Condition));
+            WriteLinearEquations(null, p);
+
             WriteBody(ast.IfBody, p);
             if (ast.ElseBody != null)
             {
@@ -64,12 +72,17 @@ namespace InterproceduralAnalysis
         private void WriteWhile(WhileAst ast, string p)
         {
             file.WriteLine("{0}while ({1})", p, GetExpr(ast.Condition));
+            WriteLinearEquations(null, p);
+
             WriteBody(ast.WhileBody, p);
         }
 
         private void WriteFor(ForAst ast, string p)
         {
             file.WriteLine("{0}for ({1}; {2}; {3})", p, GetExpr(ast.Init), GetExpr(ast.Condition), GetExpr(ast.Close));
+            WriteLinearEquations(null, p); // init
+            WriteLinearEquations(null, p); // condition
+            WriteLinearEquations(null, p); // close
             WriteBody(ast.ForBody, p);
         }
 
@@ -84,11 +97,13 @@ namespace InterproceduralAnalysis
         private void WriteGoto(GotoAst ast, string p)
         {
             file.WriteLine("{0}goto {1};", p, ast.Label);
+            WriteLinearEquations(null, p);
         }
 
         private void WriteFunctionCall(BaseAst ast, string p)
         {
             file.WriteLine("{0}{1}();", p, ast.TokenText);
+            WriteLinearEquations(null, p);
         }
 
         private void WriteLabel(BaseAst ast)
@@ -99,6 +114,7 @@ namespace InterproceduralAnalysis
         private void WriteReturn(BaseAst ast, string p)
         {
             file.WriteLine("{0}return;", p);
+            WriteLinearEquations(null, p);
         }
 
         private void WriteStatement(BaseAst ast, string p)
