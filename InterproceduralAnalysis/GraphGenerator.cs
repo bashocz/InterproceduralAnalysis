@@ -37,6 +37,7 @@ namespace InterproceduralAnalysis
                                 if (st is OperatorAst)
                                 {
                                     IaNode next = new IaNode { FncName = fncName, Name = fncName + "_after_expr_line#" + st.TokenStartLine };
+                                    st.Node = next;
                                     node.Next = new IaEdge { Name = fncName + "_expr_line#" + st.TokenStartLine, Ast = st, From = node, To = next };
                                     node = next;
                                     i++;
@@ -45,6 +46,7 @@ namespace InterproceduralAnalysis
                                 if (st.AstType == AstNodeTypes.FunctionCall)
                                 {
                                     IaNode next = new IaNode { FncName = fncName, Name = fncName + "_after_fnccall_line#" + st.TokenStartLine };
+                                    st.Node = next;
                                     node.Next = new IaEdge { Name = fncName + "_fnccall_line#" + st.TokenStartLine, Ast = st, From = node, To = next };
                                     node = next;
                                     i++;
@@ -53,6 +55,7 @@ namespace InterproceduralAnalysis
                                 if (st is ConditionAst)
                                 {
                                     IaNode next = new IaNode { FncName = fncName, Name = fncName + "_after_condition_line#" + st.TokenStartLine };
+                                    st.Node = next;
                                     node.Next = new IaEdge { Name = fncName + "_condition_line#" + st.TokenStartLine, Ast = st, From = node, To = next };
                                     node = next;
                                     i++;
@@ -74,6 +77,7 @@ namespace InterproceduralAnalysis
                                 }
                                 if (st is GotoAst)
                                 {
+                                    node.ReverseAst = st;
                                     gts.Add(new Tuple<string, IaNode, string, int>("Next", node, (st as GotoAst).Label, st.TokenStartLine));
                                     node = new IaNode { FncName = fncName, Name = fncName + "_after_goto_line#" + (st as GotoAst).Label }; // po goto musi byt novy node (nova vetev)
                                     i++;
@@ -81,6 +85,7 @@ namespace InterproceduralAnalysis
                                 }
                                 if (st.AstType == AstNodeTypes.Return)
                                 {
+                                    node.ReverseAst = st;
                                     gts.Add(new Tuple<string, IaNode, string, int>("End", node, "$End$", st.TokenStartLine));
                                     node = new IaNode { FncName = fncName, Name = fncName + "_after_return_line#" + st.TokenStartLine }; // aktualni node je konec funkce, novy node pro pokracovani, jinak se zahodi
                                     i++;
@@ -105,6 +110,9 @@ namespace InterproceduralAnalysis
                                     gt.Item2.IsTrue = new IaEdge { Name = fncName + "_condition_true_line#" + gt.Item4, From = gt.Item2, To = to };
                                 else if (gt.Item1 == "End")
                                     gt.Item2.Next = new IaEdge { Name = fncName + "_return#" + gt.Item4, From = gt.Item2, To = to };
+
+                                if (gt.Item2.ReverseAst != null)
+                                    gt.Item2.ReverseAst.Node = to;
                             }
                         }
                     }

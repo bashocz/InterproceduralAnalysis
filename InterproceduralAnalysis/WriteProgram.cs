@@ -10,9 +10,42 @@ namespace InterproceduralAnalysis
     {
         private StreamWriter file;
 
-        private void WriteLinearEquations(LinearEquations le, string p)
+        private void WriteLinearEquations(IaNode node, List<string> vars, string prefix)
         {
-            // to-do dopsat vypis linearnich rovnic jako poznamky :-)
+            string p = prefix + "  ";
+            if (node != null)
+            {
+                if (node.LinearEquations == null)
+                    file.WriteLine("{0}// Nedosazitelny stav...", p);
+                else if (node.LinearEquations.GArr[0] == null)
+                    file.WriteLine("{0}// Zadna omezeni...", p);
+                else
+                {
+                    int i = 0;
+                    while ((i < node.LinearEquations.GArr.Length) && (node.LinearEquations.GArr[i] != null))
+                    {
+                        string le = string.Empty;
+                        long[] a = node.LinearEquations.GArr[i].Vr;
+                        if (a[0] > 0)
+                            le += string.Format("{0}", a[0]);
+                        for (int j = 1; j < a.Length; j++)
+                        {
+                            if (a[j] > 0)
+                            {
+                                if (!string.IsNullOrEmpty(le))
+                                    le += " + ";
+                                le += string.Format("{0}*{1}", a[j], vars[j - 1]);
+                            }
+                        }
+                        file.WriteLine("{0}// {1} = 0", p, le);
+                        i++;
+                    }
+                }
+            }
+            else
+            {
+                file.WriteLine("{0}// Uzel neni ulozen...", p);
+            }
         }
 
         private string GetExpr(BaseAst ast)
@@ -50,60 +83,63 @@ namespace InterproceduralAnalysis
             throw new ApplicationException();
         }
 
-        private void WriteOperator(OperatorAst ast, string p)
+        private void WriteOperator(OperatorAst ast, List<string> vars, string p)
         {
             file.WriteLine("{0}{1};", p, GetExpr(ast));
-            WriteLinearEquations(null, p);
+            WriteLinearEquations(ast.Node, vars, p);
         }
 
-        private void WriteIf(IfAst ast, string p)
+        private void WriteIf(IfAst ast, List<string> vars, string p)
         {
             file.WriteLine("{0}if ({1})", p, GetExpr(ast.Condition));
-            WriteLinearEquations(null, p);
+            WriteLinearEquations(ast.ConvertCondition.Node, vars, p);
 
-            WriteBody(ast.IfBody, p);
+            WriteBody(ast.IfBody, vars, p);
             if (ast.ElseBody != null)
             {
                 file.WriteLine("{0}else", p);
-                WriteBody(ast.ElseBody, p);
+                WriteBody(ast.ElseBody, vars, p);
             }
         }
 
-        private void WriteWhile(WhileAst ast, string p)
+        private void WriteWhile(WhileAst ast, List<string> vars, string p)
         {
             file.WriteLine("{0}while ({1})", p, GetExpr(ast.Condition));
-            WriteLinearEquations(null, p);
+            WriteLinearEquations(ast.ConvertCondition.Node, vars, p);
 
-            WriteBody(ast.WhileBody, p);
+            WriteBody(ast.WhileBody, vars, p);
         }
 
-        private void WriteFor(ForAst ast, string p)
+        private void WriteFor(ForAst ast, List<string> vars, string p)
         {
             file.WriteLine("{0}for ({1}; {2}; {3})", p, GetExpr(ast.Init), GetExpr(ast.Condition), GetExpr(ast.Close));
-            WriteLinearEquations(null, p); // init
-            WriteLinearEquations(null, p); // condition
-            WriteLinearEquations(null, p); // close
-            WriteBody(ast.ForBody, p);
+            file.WriteLine("{0}// #1", p);
+            WriteLinearEquations(ast.ConvertInit.Node, vars, p); // init
+            file.WriteLine("{0}// #2", p);
+            WriteLinearEquations(ast.ConvertCondition.Node, vars, p); // condition
+            file.WriteLine("{0}// #3", p);
+            WriteLinearEquations(ast.ConvertClose.Node, vars, p); // close
+            WriteBody(ast.ForBody, vars, p);
         }
 
-        private void WriteBlock(BlockAst block, string prefix)
+        private void WriteBlock(BlockAst block, List<string> vars, string prefix)
         {
             foreach (BaseAst ast in block.Statements)
             {
-                WriteStatement(ast, prefix);
+                WriteStatement(ast, vars, prefix);
             }
         }
 
-        private void WriteGoto(GotoAst ast, string p)
+        private void WriteGoto(GotoAst ast, List<string> vars, string p)
         {
             file.WriteLine("{0}goto {1};", p, ast.Label);
-            WriteLinearEquations(null, p);
+            WriteLinearEquations(ast.Node, vars, p);
         }
 
-        private void WriteFunctionCall(BaseAst ast, string p)
+        private void WriteFunctionCall(BaseAst ast, List<string> vars, string p)
         {
             file.WriteLine("{0}{1}();", p, ast.TokenText);
-            WriteLinearEquations(null, p);
+            WriteLinearEquations(ast.Node, vars, p);
         }
 
         private void WriteLabel(BaseAst ast)
@@ -111,60 +147,60 @@ namespace InterproceduralAnalysis
             file.WriteLine("{0}:", ast.TokenText);
         }
 
-        private void WriteReturn(BaseAst ast, string p)
+        private void WriteReturn(BaseAst ast, List<string> vars, string p)
         {
             file.WriteLine("{0}return;", p);
-            WriteLinearEquations(null, p);
+            WriteLinearEquations(ast.Node, vars, p);
         }
 
-        private void WriteStatement(BaseAst ast, string p)
+        private void WriteStatement(BaseAst ast, List<string> vars, string p)
         {
             if (ast is OperatorAst)
-                WriteOperator(ast as OperatorAst, p);
+                WriteOperator(ast as OperatorAst, vars, p);
             else if (ast is IfAst)
-                WriteIf(ast as IfAst, p);
+                WriteIf(ast as IfAst, vars, p);
             else if (ast is WhileAst)
-                WriteWhile(ast as WhileAst, p);
+                WriteWhile(ast as WhileAst, vars, p);
             else if (ast is ForAst)
-                WriteFor(ast as ForAst, p);
+                WriteFor(ast as ForAst, vars, p);
             else if (ast is BlockAst)
-                WriteBlock(ast as BlockAst, p);
+                WriteBlock(ast as BlockAst, vars, p);
             else if (ast is GotoAst)
-                WriteGoto(ast as GotoAst, p);
+                WriteGoto(ast as GotoAst, vars, p);
             else
             {
                 if (ast.AstType == AstNodeTypes.FunctionCall)
-                    WriteFunctionCall(ast, p);
+                    WriteFunctionCall(ast, vars, p);
                 else if (ast.AstType == AstNodeTypes.Label)
                     WriteLabel(ast);
                 else if (ast.AstType == AstNodeTypes.Return)
-                    WriteReturn(ast, p);
+                    WriteReturn(ast, vars, p);
                 else
                     throw new ApplicationException();
             }
         }
 
-        private void WriteBody(BaseAst ast, string prefix)
+        private void WriteBody(BaseAst ast, List<string> vars, string prefix)
         {
             file.WriteLine("{0}{{", prefix);
 
-            WriteStatement(ast, prefix + "  ");
+            WriteStatement(ast, vars, prefix + "  ");
 
             file.WriteLine("{0}}}", prefix);
         }
 
-        private void WriteFunctions(string name, FunctionAst fnc)
+        private void WriteFunction(string name, FunctionAst fnc, List<string> vars)
         {
             file.WriteLine();
             file.WriteLine("function {0}()", name);
-            WriteBody(fnc.Body, "");
+            WriteBody(fnc.Body, vars, "");
         }
 
         private void WriteFunctions(ProgramAst prg)
         {
             foreach (string name in prg.OrigFncs.Keys)
             {
-                WriteFunctions(name, prg.OrigFncs[name]);
+                WriteFunction(name, prg.OrigFncs[name], prg.Vars);
             }
         }
 

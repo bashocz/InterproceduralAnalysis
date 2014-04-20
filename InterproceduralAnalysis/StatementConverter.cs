@@ -94,6 +94,7 @@ namespace InterproceduralAnalysis
             ConditionAst cond = ConvertTo<ConditionAst>(node, AstNodeTypes.Condition);
             cond.Condition = NegateCondition(node.Condition);
             block.Add(cond);
+            node.ConvertCondition = cond;
 
             if (node.ElseBody != null)
                 block.Add(new GotoAst { Token = TokenTypes.GotoRW, AstType = AstNodeTypes.Goto, TokenText = "goto", Label = string.Format("$IfFalse{0}", idx) });
@@ -130,6 +131,7 @@ namespace InterproceduralAnalysis
             ConditionAst cond = ConvertTo<ConditionAst>(node, AstNodeTypes.Condition);
             cond.Condition = NegateCondition(node.Condition);
             block.Add(cond);
+            node.ConvertCondition = cond;
 
             block.Add(new GotoAst { Token = TokenTypes.GotoRW, AstType = AstNodeTypes.Goto, TokenText = "goto", Label = string.Format("$WhileEnd{0}", idx) });
 
@@ -152,19 +154,25 @@ namespace InterproceduralAnalysis
             // this label is not needed, but for better orientation in final code
             block.Add(new BaseAst { Token = TokenTypes.Identifier, AstType = AstNodeTypes.Label, TokenText = string.Format("$ForBegin{0}", idx) });
 
-            block.AddRange(ConvertStatement(node.Init));
+            IEnumerable<BaseAst> st = ConvertStatement(node.Init);
+            block.AddRange(st);
+            node.ConvertInit = st.First();
 
             block.Add(new BaseAst { Token = TokenTypes.Identifier, AstType = AstNodeTypes.Label, TokenText = string.Format("$ForCondition{0}", idx) });
 
             ConditionAst cond = ConvertTo<ConditionAst>(node, AstNodeTypes.Condition);
             cond.Condition = NegateCondition(node.Condition);
             block.Add(cond);
+            node.ConvertCondition = cond;
 
             block.Add(new GotoAst { Token = TokenTypes.GotoRW, AstType = AstNodeTypes.Goto, TokenText = "goto", Label = string.Format("$ForEnd{0}", idx) });
 
             block.Add(new BaseAst { Token = TokenTypes.Identifier, AstType = AstNodeTypes.Label, TokenText = string.Format("$ForTrue{0}", idx) });
             block.AddRange(ConvertStatement(node.ForBody));
-            block.AddRange(ConvertStatement(node.Close));
+
+            st = ConvertStatement(node.Close);
+            block.AddRange(st);
+            node.ConvertClose = st.First();
             block.Add(new GotoAst { Token = TokenTypes.GotoRW, AstType = AstNodeTypes.Goto, TokenText = "goto", Label = string.Format("$ForCondition{0}", idx) });
 
             block.Add(new BaseAst { Token = TokenTypes.Identifier, AstType = AstNodeTypes.Label, TokenText = string.Format("$ForEnd{0}", idx) });

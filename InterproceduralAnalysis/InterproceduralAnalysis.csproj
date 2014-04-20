@@ -60,7 +60,6 @@
     <Compile Include="WriteProgram.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="program_old.txt" />
     <Content Include="program.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

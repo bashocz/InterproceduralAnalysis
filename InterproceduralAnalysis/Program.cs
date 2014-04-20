@@ -68,16 +68,16 @@ namespace InterproceduralAnalysis
 
             Console.WriteLine("Pocet promennych: {0}, pocet funkci: {1}", prg.VarsDecl.Count, prg.OrigFncs.Count);
 
-            //StatementConverter sc = new StatementConverter(printSA);
-            //sc.ConvertToIfGoto(prg);
+            StatementConverter sc = new StatementConverter(printSA);
+            sc.ConvertToIfGoto(prg);
 
-            //GraphGenerator gg = new GraphGenerator();
-            //gg.CreateGraph(prg);
+            GraphGenerator gg = new GraphGenerator();
+            gg.CreateGraph(prg);
 
-            //int w = 4;
-            //int n = prg.VarsDecl.Count;
-            //InterproceduralAnalyzer ia = new InterproceduralAnalyzer(w, n, printIAM, printIAG, printIALE);
-            //ia.Analyze(prg);
+            int w = 4;
+            int n = prg.VarsDecl.Count;
+            InterproceduralAnalyzer ia = new InterproceduralAnalyzer(w, n, printIAM, printIAG, printIALE);
+            ia.Analyze(prg);
 
             WriteProgram wp = new WriteProgram();
             wp.Write(prg, programFile);

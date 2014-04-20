@@ -1,65 +1,14 @@
-var a;
-var b = 5;
-var c = b;
-var k = --a;
-var l = b++;
-var m = 3 * (l + 2);
-var r = 3 * a + 2 * c + 8;
-var x;
-var y = 5 + 1 * x - 6 * (r + 2) + 4 * m;
-var z = 1 * (2 + 3 * x++ - 4 * (++y + 5) + 6 * r--) + 7 * (8 + 9 * x++ - 10 * (++y + 11) + 12 * r--) + 13 * (14 + 15 * x++ - 16 * (++y + 17) + 18 * r--) + 19 * (20 + 21 * x++ - 22 * (++y + 23) + 24 * r--) + 231465978;
-var w = 7 * (5 + 1 * --x - 6 * (--z + 2) + 4 * ++r);
-var e, f, g, h, i, j;
-
-function difference()
-{
-  while (b > a)
-  {
-    b--;
-    ++x;
-    if (b != x)
-    {
-      a = x - b;
-    }
-  }
-  f = a - b;
-  count();
-  return;
-}
+var a, b, c;
 
 function main()
 {
-  if (!(a == b) && (y > z || w >= ++m))
-  {
-    a = 10 + b;
-    goto one;
-  }
-  else
-  {
-    b = 30 - 10 * x - 4 + y - 6 * z;
-    w = 3 * (5 + 1 * --x - 6 * (--z + 2) + 4 * ++w);
-  }
-  x = 0x14abcdef;
-  y = -5;
-  z = 105;
-  w = 101;
-  a = x + 3 * y - 2 * z;
-  b = 6 * (x - y - z);
-  count();
-one:
-  c = a;
-}
-
-function count()
-{
-  e = a + b;
-  if (i + 3 >= j * 8 && i * 9 < j++)
-  {
-    difference();
-    for (i = 0; i < 10; i++)
-    {
-      x = i;
-    }
-  }
-  return;
+  a = 2 + 6 * a + 8 * b;
+    // 8*a = 0
+  b = 4 + 2 * a + 6 * b;
+    // 8*a = 0
+    // 8*b = 0
+  c = a++ + --b;
+    // 1 + 15*a + 7*b + 9*c = 0
+    // 8*a + 8*b = 0
+    // 8*b + 8*c = 0
 }

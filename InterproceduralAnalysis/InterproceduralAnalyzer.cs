@@ -184,18 +184,18 @@ namespace InterproceduralAnalysis
                     mtxs.Add(bfm.VectorToMatrix(last.FunctionGSet.GArr[i].Vr, bg.var_n));
                     i++;
                 }
-                if (mtxs.Count == 0)
-                    throw new ApplicationException();
-
-                foreach (IaEdge edge in fncCallEdges)
+                if (mtxs.Count > 0)
                 {
-                    if ((edge.Ast == null) || (edge.Ast.AstType != AstNodeTypes.FunctionCall))
-                        throw new ApplicationException();
-
-                    if (edge.Ast.TokenText == last.FncName)
+                    foreach (IaEdge edge in fncCallEdges)
                     {
-                        edge.MatrixSet.TMatrixes.Clear();
-                        edge.MatrixSet.TMatrixes.AddRange(mtxs);
+                        if ((edge.Ast == null) || (edge.Ast.AstType != AstNodeTypes.FunctionCall))
+                            throw new ApplicationException();
+
+                        if (edge.Ast.TokenText == last.FncName)
+                        {
+                            edge.MatrixSet.TMatrixes.Clear();
+                            edge.MatrixSet.TMatrixes.AddRange(mtxs);
+                        }
                     }
                 }
             }

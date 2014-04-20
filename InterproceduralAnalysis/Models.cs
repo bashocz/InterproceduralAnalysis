@@ -100,6 +100,8 @@ namespace InterproceduralAnalysis
     {
         public AstNodeTypes AstType { get; set; }
 
+        public IaNode Node { get; set; }
+
         public static BaseAst GetEndAstNode()
         {
             return new BaseAst { Token = TokenTypes.End };
@@ -139,11 +141,18 @@ namespace InterproceduralAnalysis
     {
         public BaseAst IfBody { get; set; }
         public BaseAst ElseBody { get; set; }
+
+        public BaseAst ConvertCondition { get; set; }
+        //public BaseAst ConvertIfBody { get; set; }
+        //public BaseAst ConvertElseBody { get; set; }
     }
 
     class WhileAst : ConditionAst
     {
         public BaseAst WhileBody { get; set; }
+
+        public BaseAst ConvertCondition { get; set; }
+        //public BaseAst ConvertWhileBody { get; set; }
     }
 
     class ForAst : ConditionAst
@@ -151,6 +160,11 @@ namespace InterproceduralAnalysis
         public BaseAst Init { get; set; }
         public BaseAst Close { get; set; }
         public BaseAst ForBody { get; set; }
+
+        public BaseAst ConvertInit { get; set; }
+        public BaseAst ConvertCondition { get; set; }
+        public BaseAst ConvertClose { get; set; }
+        //public BaseAst ConvertForBody { get; set; }
     }
 
     class GotoAst : BaseAst
@@ -227,6 +241,8 @@ namespace InterproceduralAnalysis
         public string FncName { get; set; }
 
         public string Name { get; set; }
+
+        public BaseAst ReverseAst { get; set; }
 
         public IaEdge Next { get; set; } // for all statements
 
