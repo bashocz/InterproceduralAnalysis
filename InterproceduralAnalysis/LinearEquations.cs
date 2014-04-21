@@ -107,7 +107,7 @@ namespace InterproceduralAnalysis
             }
         }
 
-        private void ExchangeRows(long[][] A, long[][] T, int di, int pj)
+        private void ExchangeRows(long[][] A, int di, int pj)
         {
             if (di == pj)
                 return;
@@ -146,7 +146,7 @@ namespace InterproceduralAnalysis
 
                 ExchangeColumns(A, T, di, pi);
 
-                ExchangeRows(A, T, di, pj);
+                ExchangeRows(A, di, pj);
 
                 if (print)
                 {

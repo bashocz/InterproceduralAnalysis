@@ -13,12 +13,13 @@ namespace InterproceduralAnalysis
         private void WriteLinearEquations(IaNode node, List<string> vars, string prefix)
         {
             string p = prefix + "  ";
+            file.WriteLine("{0}/*", p);
             if (node != null)
             {
                 if (node.LinearEquations == null)
-                    file.WriteLine("{0}// Nedosazitelny stav...", p);
+                    file.WriteLine("{0} * Nedosazitelny stav", p);
                 else if (node.LinearEquations.GArr[0] == null)
-                    file.WriteLine("{0}// Zadna omezeni...", p);
+                    file.WriteLine("{0} * Zadna omezeni", p);
                 else
                 {
                     int i = 0;
@@ -37,15 +38,16 @@ namespace InterproceduralAnalysis
                                 le += string.Format("{0}*{1}", a[j], vars[j - 1]);
                             }
                         }
-                        file.WriteLine("{0}// {1} = 0", p, le);
+                        file.WriteLine("{0} * {1} = 0", p, le);
                         i++;
                     }
                 }
             }
             else
             {
-                file.WriteLine("{0}// Uzel neni ulozen...", p);
+                file.WriteLine("{0} * Uzel neni ulozen...", p);
             }
+            file.WriteLine("{0}*/", p);
         }
 
         private string GetExpr(BaseAst ast)
@@ -233,7 +235,7 @@ namespace InterproceduralAnalysis
 
         private string GetProgramFile(string originProgramFile)
         {
-            return Path.ChangeExtension(originProgramFile, ".ia." + Path.GetExtension(originProgramFile));
+            return Path.ChangeExtension(originProgramFile, ".ia" + Path.GetExtension(originProgramFile));
         }
 
         public void Write(ProgramAst prg, string originProgramFile)

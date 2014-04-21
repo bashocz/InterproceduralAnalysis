@@ -1,11 +1,35 @@
 ﻿var a,b,c;
 
-
-function main(){
-  a = 2 + 6*a + 8*b;
-  b = 4 + 2*a + 6*b;
-  c = a++ + --b;
+function main()
+{
+  a = 1;
+  b = 1;
+  c = 1;
+  fncA();
 }
+
+function fncA()
+{
+  b = 4;
+  for(a = 1; a < ++b; a++)
+  {
+    c++;
+  }
+}
+/*
+function fncB()
+{
+  c = 3*a + 4*b;
+  fncA();
+  b = 3 + 4*a;
+}
+
+/*
+function main(){
+  a = 2 + 6*c + 8*b;
+  b = 4 + 2*a + 6*c;
+  c = a++ + --b;
+}*/
 
 /*
 function main(){
@@ -29,6 +53,6 @@ function fncA()
   }
   else
   {
-    c = b - a;
+    fncA();
   }
 }*/
