@@ -241,7 +241,7 @@ namespace InterproceduralAnalysis
                     varStr = string.Empty;
 
                     BaseAst varAst = prg.VarsDecl[var];
-                    file.WriteLine("var {0} = {1};", var, GetExpr(varAst));
+                    file.WriteLine("var {0};", GetExpr(varAst));
                     WriteLinearEquations(varAst.Node, prg.Vars, "");
                 }
             }

@@ -181,9 +181,13 @@ namespace InterproceduralAnalysis
                 if (nextNode.Token == TokenTypes.Equals)
                 {
                     ReadNextAst();
+                    OperatorAst op = actualNode as OperatorAst;
                     BaseAst node = GetExprAST(out expr);
                     if (node.IsError)
                         return node;
+                    op.Left = var;
+                    op.Right = expr;
+                    expr = op;
                 }
 
                 program.Vars.Add(var.TokenText);
