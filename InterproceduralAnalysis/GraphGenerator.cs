@@ -7,7 +7,25 @@ namespace InterproceduralAnalysis
 {
     class GraphGenerator
     {
-        public bool CreateGraph(ProgramAst program)
+        private bool CreateVariableGraph(ProgramAst program)
+        {
+            IaNode node = new IaNode { FncName = "var_decl", Name = "var_decl_begin" };
+            program.VarGraph = node;
+            foreach (string varName in program.Vars)
+            {
+                BaseAst ast = program.VarsDecl[varName];
+                if (ast != null)
+                {
+                    IaNode to = new IaNode { FncName = "var_decl", Name = "var_decl_after_" + varName };
+                    ast.Node = to;
+                    node.Next = new IaEdge { Name = "var_decl_expr_line#" + ast.TokenStartLine, Ast = ast, From = node, To = to };
+                    node = to;
+                }
+            }
+            return true;
+        }
+
+        private bool CreateFunctionGraphs(ProgramAst program)
         {
             foreach (string fncName in program.ConvFncs.Keys)
             {
@@ -29,6 +47,7 @@ namespace InterproceduralAnalysis
                             List<Tuple<string, IaNode, string, int>> gts = new List<Tuple<string, IaNode, string, int>>();
 
                             IaNode node = new IaNode { FncName = fncName, Name = fncName + "_fnc_begin" };
+                            program.OrigFncs[fncName].Node = node;
                             program.Graph.Add(fncName, node);
                             int i = 0;
                             while (i < fnc.Body.Statements.Count)
@@ -118,6 +137,17 @@ namespace InterproceduralAnalysis
                     }
                 }
             }
+            return true;
+        }
+
+        public bool CreateGraph(ProgramAst program)
+        {
+            if (!CreateVariableGraph(program))
+                return false;
+
+            if (!CreateFunctionGraphs(program))
+                return false;
+
             return true;
         }
     }

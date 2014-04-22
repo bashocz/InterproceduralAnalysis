@@ -21,7 +21,7 @@ namespace InterproceduralAnalysis
         static int Main(string[] args)
         {
             //programName = args[0];
-            programFile = @"C:\Users\Míša\Documents\Visual Studio 2010\Projects\InterproceduralAnalysis\InterproceduralAnalysis\program.txt";
+            programFile = @"d:\Projects\github\InterproceduralAnalysis\InterproceduralAnalysis\program.txt";
             //printLA = arg[1];
             printLA = false;
             printSA = false;

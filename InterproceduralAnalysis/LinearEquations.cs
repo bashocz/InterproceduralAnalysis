@@ -178,6 +178,9 @@ namespace InterproceduralAnalysis
 
         public void CalculateLE()
         {
+            //if (parent.GeneratorSet == null)
+            //    return;
+
             Preset();
 
             if (print)

@@ -215,6 +215,8 @@ namespace InterproceduralAnalysis
             get { return convFncs ?? (convFncs = new Dictionary<string, FunctionAst>()); }
         }
 
+        public IaNode VarGraph { get; set; }
+
         private Dictionary<string, IaNode> graph;
         public Dictionary<string, IaNode> Graph
         {

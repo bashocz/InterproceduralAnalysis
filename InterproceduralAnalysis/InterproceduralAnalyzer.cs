@@ -33,8 +33,9 @@ namespace InterproceduralAnalysis
         private void CreateTransitionMatrixes(ProgramAst prg)
         {
             Queue<IaNode> q = new Queue<IaNode>();
+            q.Enqueue(prg.VarGraph); // variables
             foreach (string name in prg.OrigFncs.Keys)
-                q.Enqueue(prg.Graph[name]);
+                q.Enqueue(prg.Graph[name]); // functions
 
             while (q.Count > 0)
             {
@@ -209,35 +210,87 @@ namespace InterproceduralAnalysis
         {
             long[][] id = bg.GetIdentity(bg.var_n);
             for (int i = 0; i < bg.var_n; i++)
-                w_queue.Enqueue(new NodeVector { Node = node, Vector = new LeadVector(id[i]) });
+            {
+                LeadVector vr = new LeadVector(id[i]);
+                node.GeneratorSet.AddVector(vr);
+                w_queue.Enqueue(new NodeVector { Node = node, Vector = vr });
+            }
         }
 
-        private void CreateEmptyG(ProgramAst prg)
+        //private void CreateEmptyG(ProgramAst prg)
+        //{
+        //    foreach (IaNode node in prg.Graph.Values)
+        //    {
+        //        Queue<IaNode> q = new Queue<IaNode>();
+        //        q.Enqueue(node);
+        //        while (q.Count > 0)
+        //        {
+        //            IaNode n = q.Dequeue();
+        //            if (n.GeneratorSet == null)
+        //            {
+        //                n.GeneratorSet = new GeneratorSet(n, bg);
+        //                foreach (IaEdge edge in n.Edges)
+        //                    if (edge.To.GeneratorSet == null)
+        //                        q.Enqueue(edge.To);
+        //            }
+        //        }
+        //    }
+        //}
+
+        private Queue<NodeVector> VariableGeneratorSets(ProgramAst prg)
         {
-            foreach (IaNode node in prg.Graph.Values)
+            Queue<NodeVector> w_queue = new Queue<NodeVector>();
+            IaNode main = prg.Graph["main"];
+            main.GeneratorSet = new GeneratorSet(main, bg);
+
+            Queue<NodeVector> vq = new Queue<NodeVector>();
+            prg.VarGraph.GeneratorSet = new GeneratorSet(prg.VarGraph, bg);
+            AddIdentityVectors(vq, prg.VarGraph);
+
+            while (vq.Count > 0)
             {
-                Queue<IaNode> q = new Queue<IaNode>();
-                q.Enqueue(node);
-                while (q.Count > 0)
+                NodeVector pair = vq.Dequeue();
+
+                IaNode from = pair.Node;
+                if (from.Edges.Count() > 0)
                 {
-                    IaNode n = q.Dequeue();
-                    if (n.GeneratorSet == null)
+                    foreach (IaEdge edge in from.Edges)
                     {
-                        n.GeneratorSet = new GeneratorSet(n, bg);
-                        foreach (IaEdge edge in n.Edges)
-                            if (edge.To.GeneratorSet == null)
-                                q.Enqueue(edge.To);
+                        IaNode to = edge.To;
+
+                        foreach (long[][] a_mtx in edge.MatrixSet.TMatrixes)
+                        {
+                            long[] xi = bg.MatrixMultiVector(a_mtx, pair.Vector.Vr, bg.var_m);
+                            LeadVector x = new LeadVector(xi);
+                            if (x.Lidx >= 0) // neni to nulovy vektor
+                            {
+                                if (to.GeneratorSet == null)
+                                    to.GeneratorSet = new GeneratorSet(to, bg);
+
+                                if (to.GeneratorSet.AddVector(x))
+                                {
+                                    if (printG)
+                                        to.GeneratorSet.Print();
+
+                                    vq.Enqueue(new NodeVector { Node = to, Vector = x });
+                                }
+                            }
+                        }
                     }
                 }
+                else // konec definice promennych
+                {
+                    main.GeneratorSet.AddVector(pair.Vector);
+                    w_queue.Enqueue(new NodeVector { Node = main, Vector = pair.Vector });
+                }
             }
+
+            return w_queue;
         }
 
         private void CreateGeneratorSets(ProgramAst prg)
         {
-            CreateEmptyG(prg);
-
-            Queue<NodeVector> w_queue = new Queue<NodeVector>();
-            AddIdentityVectors(w_queue, prg.Graph["main"]);
+            Queue<NodeVector> w_queue = VariableGeneratorSets(prg);
 
             while (w_queue.Count > 0)
             {
@@ -251,6 +304,9 @@ namespace InterproceduralAnalysis
                     if ((edge.Ast != null) && (edge.Ast.AstType == AstNodeTypes.FunctionCall))
                     {
                         IaNode fncBegin = prg.Graph[edge.Ast.TokenText];
+                        if (fncBegin.GeneratorSet == null)
+                            fncBegin.GeneratorSet = new GeneratorSet(fncBegin, bg);
+
                         if (fncBegin.GeneratorSet.AddVector(pair.Vector))
                         {
                             if (printG)
@@ -266,6 +322,9 @@ namespace InterproceduralAnalysis
                         LeadVector x = new LeadVector(xi);
                         if (x.Lidx >= 0) // neni to nulovy vektor
                         {
+                            if (to.GeneratorSet == null)
+                                to.GeneratorSet = new GeneratorSet(to, bg);
+
                             if (to.GeneratorSet.AddVector(x))
                             {
                                 if (printG)
@@ -285,22 +344,22 @@ namespace InterproceduralAnalysis
 
         private void CreateLinearEquations(ProgramAst prg)
         {
+            Queue<IaNode> q = new Queue<IaNode>();
+            q.Enqueue(prg.VarGraph);
             foreach (IaNode node in prg.Graph.Values)
-            {
-                Queue<IaNode> q = new Queue<IaNode>();
                 q.Enqueue(node);
-                while (q.Count > 0)
-                {
-                    IaNode n = q.Dequeue();
-                    if (n.LinearEquations == null)
-                    {
-                        n.LinearEquations = new LinearEquations(n, bg, printLE);
-                        n.LinearEquations.CalculateLE();
 
-                        foreach (IaEdge edge in n.Edges)
-                            if (edge.To.LinearEquations == null)
-                                q.Enqueue(edge.To);
-                    }
+            while (q.Count > 0)
+            {
+                IaNode n = q.Dequeue();
+                if ((n.GeneratorSet != null) && (n.LinearEquations == null))
+                {
+                    n.LinearEquations = new LinearEquations(n, bg, printLE);
+                    n.LinearEquations.CalculateLE();
+
+                    foreach (IaEdge edge in n.Edges)
+                        if (edge.To.LinearEquations == null)
+                            q.Enqueue(edge.To);
                 }
             }
         }
@@ -315,7 +374,7 @@ namespace InterproceduralAnalysis
             CreateLinearEquations(prg);
         }
     }
-    
-    
+
+
 
 }
