@@ -19,6 +19,8 @@ namespace InterproceduralAnalysis
         private static bool printIAG;
         private static bool printIALE;
 
+        private static int w;
+
         static int Main(string[] args)
         {
             programFile = null;
@@ -35,21 +37,8 @@ namespace InterproceduralAnalysis
                 return -1;
             }
 
-            if (programFile == null)
-            {
-                Console.WriteLine("Parametr 'programFile' je povinny.");
-                PrintHelp();
-                Console.ReadKey();
-                return -1;
-            }
 
-            if (!File.Exists(programFile))
-            {
-                Console.WriteLine(string.Format("Soubor programu '{0}' neexistuje.", programFile));
-                PrintHelp();
-                Console.ReadKey();
-                return -1;
-            }
+
 
             LexicalAnalyzer la = new LexicalAnalyzer(programFile, printLA);
             SyntacticAnalyzer sa = new SyntacticAnalyzer(la);
@@ -78,7 +67,6 @@ namespace InterproceduralAnalysis
             Stopwatch s = new Stopwatch();
             s.Start();
 
-            int w = 3;
             int n = prg.VarsDecl.Count;
             InterproceduralAnalyzer ia = new InterproceduralAnalyzer(w, n, printIAM, printIAG, printIALE);
             ia.Analyze(prg);
@@ -103,7 +91,7 @@ namespace InterproceduralAnalysis
             }
 
             int ai = 0;
-            bool isProgram = false;
+            bool isProgram = false, isW = false;
 
             while (ai < args.Length)
             {
@@ -125,6 +113,43 @@ namespace InterproceduralAnalysis
 
                     programFile = args[ai + 1];
                     isProgram = true;
+
+                    ai += 2;
+                    continue;
+                }
+
+                if (args[ai] == "/w")
+                {
+                    if (isW)
+                    {
+                        Console.WriteLine("Parametr rozsah celocislenych promennych w musi byt pouze jednou.");
+                        Console.WriteLine();
+                        return false;
+                    }
+
+                    if (ai >= (args.Count() - 1))
+                    {
+                        Console.WriteLine("Parametr rozsah celocislenych promennych w je povinny.");
+                        Console.WriteLine();
+                        return false;
+                    }
+
+                    int wInt;
+                    if (!int.TryParse(args[ai + 1], out wInt))
+                    {
+                        Console.WriteLine("Parametr rozsah celocislenych promennych w='{0}' neni celociselna hodnota.", args[ai + 1]);
+                        Console.WriteLine();
+                        return false;
+                    }
+                    if ((wInt < 1) && (wInt > 32))
+                    {
+                        Console.WriteLine("Parametr rozsah celocislenych promennych w='{0}' musi byt v rozsahu <1,32>.", wInt);
+                        Console.WriteLine();
+                        return false;
+                    }
+
+                    w = wInt;
+                    isW = true;
 
                     ai += 2;
                     continue;
@@ -182,6 +207,27 @@ namespace InterproceduralAnalysis
                 return false;
             }
 
+            if (!isProgram)
+            {
+                Console.WriteLine("Parametr jmeno souboru programu je povinny.");
+                Console.WriteLine();
+                return false;
+            }
+
+            if (!File.Exists(programFile))
+            {
+                Console.WriteLine(string.Format("Soubor programu '{0}' neexistuje.", programFile));
+                Console.WriteLine();
+                return false;
+            }
+
+            if (!isW)
+            {
+                Console.WriteLine("Parametr rozsah celocislenych promennych w je povinny.");
+                Console.WriteLine();
+                return false;
+            }
+
             return true;
         }
 
@@ -189,11 +235,12 @@ namespace InterproceduralAnalysis
         {
             Console.WriteLine();
             Console.WriteLine("Pouziti:");
-            Console.WriteLine("    intprocan.exe /p <jmeno_program> [ /? |");
-            Console.WriteLine("                                       /d [all | la | sa | iam | iag | iale]");
+            Console.WriteLine("    intprocan.exe /p <jmeno_program> /w <rozsah_int> [ /? |");
+            Console.WriteLine("                                                       /d [all|la|sa|iam|iag|iale]");
             Console.WriteLine();
             Console.WriteLine("Kde:");
             Console.WriteLine("    /p <jmeno_program>    povinny parametr - jmeno programu");
+            Console.WriteLine("    /w <rozsah_int>       povinny parametr - je rozsah celociselnych promennych 2^w, kde w = <1,32>");
             Console.WriteLine("Volitelne:");
             Console.WriteLine("    /?                    zobrazeni napovedy");
             Console.WriteLine("    /d                    zobrazeni pomocnych vypisu");
