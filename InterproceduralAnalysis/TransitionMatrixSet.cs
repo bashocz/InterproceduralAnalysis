@@ -315,7 +315,7 @@ namespace InterproceduralAnalysis
                     TMatrixes.Add(b.GetIdentity(var_n));
                 }
             }
-            else if (parent.Ast.AstType != AstNodeTypes.FunctionCall)
+            else if ((parent.Ast == null) || (parent.Ast.AstType != AstNodeTypes.FunctionCall))
             {
                 TMatrixes.Add(b.GetIdentity(var_n));
             }

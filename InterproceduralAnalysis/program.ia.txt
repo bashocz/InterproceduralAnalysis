@@ -1,72 +1,25 @@
-var a, b, c;
+var a, b;
 
 function main()
   /*
    * Zadna omezeni
   */
 {
-  a = 1;
+  a = 0;
     /*
-     * 255 + 1*a = 0
+     * 1*a = 0
     */
-  fncA();
+  if (a > b)
     /*
-     * Nedosazitelny stav
+     * 1*a = 0
     */
-}
-
-function fncA()
-  /*
-   * 255 + 1*a = 0
-  */
-{
-  b = 4;
+  {
+    a = 1;
+      /*
+       * 255 + 1*a = 0
+      */
+  }
     /*
-     * 255 + 1*a = 0
-     * 4*a + 255*b = 0
-    */
-  fncC();
-    /*
-     * Nedosazitelny stav
-    */
-  fncB();
-    /*
-     * Nedosazitelny stav
-    */
-  c = 5;
-    /*
-     * Nedosazitelny stav
-    */
-}
-
-function fncB()
-  /*
-   * Nedosazitelny stav
-  */
-{
-  c = 3 * a + 4 * b;
-  fncA();
-  b = 3 + 4 * a;
-}
-
-function fncC()
-  /*
-   * 252 + 1*b = 0
-   * 192*a + 208*b = 0
-   * 64*b = 0
-  */
-{
-  a = 5;
-    /*
-     * 251 + 1*a = 0
-     * 4*a + 251*b = 0
-    */
-  fncC();
-    /*
-     * Nedosazitelny stav
-    */
-  b = 4;
-    /*
-     * Nedosazitelny stav
+     * Zadna omezeni
     */
 }

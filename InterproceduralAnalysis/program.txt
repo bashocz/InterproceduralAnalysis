@@ -1,62 +1,10 @@
-﻿var a,b,c;
+﻿var a, b;
 
 function main()
 {
-  a = 1;
-  fncA();
-}
-
-function fncA()
-{
-  b = 4;
-  fncC();
-  fncB();
-  c = 5;
-}
-
-function fncB()
-{
-  c = 3*a + 4*b;
-  fncA();
-  b = 3 + 4*a;
-}
-
-function fncC()
-{
-  a = 5;
-  fncC();
-  b = 4;
-}
-
-/*
-function main(){
-  a = 2 + 6*c + 8*b;
-  b = 4 + 2*a + 6*c;
-  c = a++ + --b;
-}*/
-
-/*
-function main(){
-  b = 4 - a++;
-  fncA();
-  a = 3 + 4*a - --b + 6*c;
-  if ( b > c++ )
+  a = 0;
+  if (a>b)
   {
-    c = 4 + 6*a + 7*b - c;
-    a++;
-    b--;
+    a = 1;
   }
-  b = 4*a + b - 6*c;
 }
-
-function fncA()
-{
-  if (a > b)
-  {
-    a--;
-  }
-  else
-  {
-    fncA();
-  }
-}*/
