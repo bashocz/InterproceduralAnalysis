@@ -104,10 +104,15 @@ namespace InterproceduralAnalysis
                 WriteLinearEquations(ast.ConvertCondition.Node, vars, p);
 
             WriteBody(ast.IfBody, vars, p, writeLE);
+            if (writeLE)
+                WriteLinearEquations(ast.ConvertIfEndBody.Node, vars, p);
+            
             if (ast.ElseBody != null)
             {
                 file.WriteLine("{0}else", p);
                 WriteBody(ast.ElseBody, vars, p, writeLE);
+                if (writeLE)
+                    WriteLinearEquations(ast.ConvertElseEndBody.Node, vars, p);
             }
         }
 
@@ -118,6 +123,8 @@ namespace InterproceduralAnalysis
                 WriteLinearEquations(ast.ConvertCondition.Node, vars, p);
 
             WriteBody(ast.WhileBody, vars, p, writeLE);
+            if (writeLE)
+                WriteLinearEquations(ast.ConvertWhileEndBody.Node, vars, p);
         }
 
         private void WriteFor(ForAst ast, List<string> vars, string p, bool writeLE)
@@ -133,6 +140,8 @@ namespace InterproceduralAnalysis
                 WriteLinearEquations(ast.ConvertClose.Node, vars, p); // close
             }
             WriteBody(ast.ForBody, vars, p, writeLE);
+            if (writeLE)
+                WriteLinearEquations(ast.ConvertForEndBody.Node, vars, p);
         }
 
         private void WriteBlock(BlockAst block, List<string> vars, string prefix, bool writeLE)
@@ -205,12 +214,21 @@ namespace InterproceduralAnalysis
             file.WriteLine("{0}}}", prefix);
         }
 
+        private void WriteFunctionBody(BaseAst ast, List<string> vars, string prefix, bool writeLE)
+        {
+            file.WriteLine("{0}{{", prefix);
+
+            WriteStatement(ast, vars, prefix + "  ", writeLE);
+
+            file.WriteLine("{0}}}", prefix);
+        }
+
         private void WriteFunction(string name, FunctionAst fnc, List<string> vars)
         {
             file.WriteLine();
             file.WriteLine("function {0}()", name);
             bool writeLE = WriteLinearEquations(fnc.Node, vars, "");
-            WriteBody(fnc.Body, vars, "", writeLE);
+            WriteFunctionBody(fnc.Body, vars, "", writeLE);
         }
 
         private void WriteFunctions(ProgramAst prg)

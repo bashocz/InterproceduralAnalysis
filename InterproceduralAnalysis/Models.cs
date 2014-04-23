@@ -143,8 +143,8 @@ namespace InterproceduralAnalysis
         public BaseAst ElseBody { get; set; }
 
         public BaseAst ConvertCondition { get; set; }
-        //public BaseAst ConvertIfBody { get; set; }
-        //public BaseAst ConvertElseBody { get; set; }
+        public BaseAst ConvertIfEndBody { get; set; }
+        public BaseAst ConvertElseEndBody { get; set; }
     }
 
     class WhileAst : ConditionAst
@@ -152,7 +152,7 @@ namespace InterproceduralAnalysis
         public BaseAst WhileBody { get; set; }
 
         public BaseAst ConvertCondition { get; set; }
-        //public BaseAst ConvertWhileBody { get; set; }
+        public BaseAst ConvertWhileEndBody { get; set; }
     }
 
     class ForAst : ConditionAst
@@ -164,7 +164,7 @@ namespace InterproceduralAnalysis
         public BaseAst ConvertInit { get; set; }
         public BaseAst ConvertCondition { get; set; }
         public BaseAst ConvertClose { get; set; }
-        //public BaseAst ConvertForBody { get; set; }
+        public BaseAst ConvertForEndBody { get; set; }
     }
 
     class GotoAst : BaseAst

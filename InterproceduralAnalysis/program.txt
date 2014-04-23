@@ -11,7 +11,7 @@ function main()
 function fncA()
 {
   b = 4;
-  for(a = 1; a < ++b; a++)
+  if(a < ++b)
   {
     c++;
   }

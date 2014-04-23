@@ -104,13 +104,18 @@ namespace InterproceduralAnalysis
             block.Add(new BaseAst { Token = TokenTypes.Identifier, AstType = AstNodeTypes.Label, TokenText = string.Format("$IfTrue{0}", idx) });
             block.AddRange(ConvertStatement(node.IfBody));
 
-            if (node.ElseBody != null)
-            {
-                block.Add(new GotoAst { Token = TokenTypes.GotoRW, AstType = AstNodeTypes.Goto, TokenText = "goto", Label = string.Format("$IfEnd{0}", idx) });
+            GotoAst gt = new GotoAst { Token = TokenTypes.GotoRW, AstType = AstNodeTypes.Goto, TokenText = "goto", Label = string.Format("$IfEnd{0}", idx) };
+            block.Add(gt);
+            node.ConvertIfEndBody = gt;
 
-                // this label is not needed, but for better orientation in final code
+            if (node.ElseBody != null)
+            {                
                 block.Add(new BaseAst { Token = TokenTypes.Identifier, AstType = AstNodeTypes.Label, TokenText = string.Format("$IfFalse{0}", idx) });
                 block.AddRange(ConvertStatement(node.ElseBody));
+
+                gt = new GotoAst { Token = TokenTypes.GotoRW, AstType = AstNodeTypes.Goto, TokenText = "goto", Label = string.Format("$IfEnd{0}", idx) };
+                block.Add(gt);
+                node.ConvertElseEndBody = gt;
             }
 
             block.Add(new BaseAst { Token = TokenTypes.Identifier, AstType = AstNodeTypes.Label, TokenText = string.Format("$IfEnd{0}", idx) });
@@ -133,7 +138,9 @@ namespace InterproceduralAnalysis
             block.Add(cond);
             node.ConvertCondition = cond;
 
-            block.Add(new GotoAst { Token = TokenTypes.GotoRW, AstType = AstNodeTypes.Goto, TokenText = "goto", Label = string.Format("$WhileEnd{0}", idx) });
+            GotoAst gt = new GotoAst { Token = TokenTypes.GotoRW, AstType = AstNodeTypes.Goto, TokenText = "goto", Label = string.Format("$WhileEnd{0}", idx) };
+            block.Add(gt);
+            node.ConvertWhileEndBody = gt;
 
             block.Add(new BaseAst { Token = TokenTypes.Identifier, AstType = AstNodeTypes.Label, TokenText = string.Format("$WhileTrue{0}", idx) });
             block.AddRange(ConvertStatement(node.WhileBody));
@@ -165,7 +172,9 @@ namespace InterproceduralAnalysis
             block.Add(cond);
             node.ConvertCondition = cond;
 
-            block.Add(new GotoAst { Token = TokenTypes.GotoRW, AstType = AstNodeTypes.Goto, TokenText = "goto", Label = string.Format("$ForEnd{0}", idx) });
+            GotoAst gt = new GotoAst { Token = TokenTypes.GotoRW, AstType = AstNodeTypes.Goto, TokenText = "goto", Label = string.Format("$ForEnd{0}", idx) };
+            block.Add(gt);
+            node.ConvertForEndBody = gt;
 
             block.Add(new BaseAst { Token = TokenTypes.Identifier, AstType = AstNodeTypes.Label, TokenText = string.Format("$ForTrue{0}", idx) });
             block.AddRange(ConvertStatement(node.ForBody));

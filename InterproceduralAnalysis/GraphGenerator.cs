@@ -80,6 +80,7 @@ namespace InterproceduralAnalysis
                                     i++;
 
                                     BaseAst gt = fnc.Body.Statements[i];
+                                    node.ReverseAst = gt;
                                     gts.Add(new Tuple<string, IaNode, string, int>("IsTrue", node, (gt as GotoAst).Label, st.TokenStartLine));
                                     next = new IaNode { FncName = fncName, Name = fncName + "_condition_false_line#" + st.TokenStartLine };
                                     node.IsFalse = new IaEdge { Name = fncName + "_condition_false_line#" + st.TokenStartLine, From = node, To = next };
