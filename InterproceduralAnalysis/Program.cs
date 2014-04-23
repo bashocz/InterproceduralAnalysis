@@ -164,7 +164,7 @@ namespace InterproceduralAnalysis
                         return false;
                     }
 
-                    string[] dos = args[ai + 1].Split('|');
+                    string[] dos = args[ai + 1].Split('+');
                     foreach (string doi in dos)
                     {
                         switch (doi)
@@ -236,7 +236,7 @@ namespace InterproceduralAnalysis
             Console.WriteLine();
             Console.WriteLine("Pouziti:");
             Console.WriteLine("    intprocan.exe /p <jmeno_program> /w <rozsah_int> [ /? |");
-            Console.WriteLine("                                                       /d [all|la|sa|iam|iag|iale]");
+            Console.WriteLine("                                                       /d [all+la+sa+iam+iag+iale]");
             Console.WriteLine();
             Console.WriteLine("Kde:");
             Console.WriteLine("    /p <jmeno_program>    povinny parametr - jmeno programu");
@@ -246,7 +246,7 @@ namespace InterproceduralAnalysis
             Console.WriteLine("    /d                    zobrazeni pomocnych vypisu");
             Console.WriteLine("    /d all                zobrazeni vsech pomocnych vypisu");
             Console.WriteLine("    /d la                 zobrazeni pomocnych vypisu lexikalni analyzy");
-            Console.WriteLine("    /d sa                 zobrazeni pomocnych vypisu syntakticke analyzy");
+            Console.WriteLine("    /d sa                 zobrazeni pomocnych vypisu prevodu AST na podminku a goto");
             Console.WriteLine("    /d iam                zobrazeni pomocnych vypisu interproceduralni analyzy vypoctu prechodovych matic");
             Console.WriteLine("    /d iag                zobrazeni pomocnych vypisu interproceduralni analyzy vypoctu generatoru");
             Console.WriteLine("    /d iale               zobrazeni pomocnych vypisu interproceduralni analyzy vypoctu linearnich rovnic");
@@ -254,7 +254,7 @@ namespace InterproceduralAnalysis
             Console.WriteLine("Priklady:");
             Console.WriteLine("    > intprocan.exe /p program.txt");
             Console.WriteLine("    > intprocan.exe /p C:\\project\\program.txt /d all");
-            Console.WriteLine("    > intprocan.exe /p C:\\project\\program.txt /d la|sa|iale");
+            Console.WriteLine("    > intprocan.exe /p C:\\project\\program.txt /d la+sa+iale");
             Console.WriteLine();
         }
     }
