@@ -3,25 +3,29 @@
 function main()
 {
   a = 1;
-  b = 1;
-  c = 1;
   fncA();
 }
 
 function fncA()
 {
   b = 4;
-  if(a < ++b)
-  {
-    c++;
-  }
+  fncC();
+  fncB();
+  c = 5;
 }
-/*
+
 function fncB()
 {
   c = 3*a + 4*b;
   fncA();
   b = 3 + 4*a;
+}
+
+function fncC()
+{
+  a = 5;
+  fncC();
+  b = 4;
 }
 
 /*

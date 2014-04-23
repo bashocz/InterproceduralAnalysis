@@ -9,53 +9,63 @@ function main()
     /*
      * 7 + 1*a = 0
     */
-  b = 1;
-    /*
-     * 7 + 1*b = 0
-     * 7*a + 1*b = 0
-    */
-  c = 1;
-    /*
-     * 7 + 1*a = 0
-     * 1*a + 7*b = 0
-     * 1*b + 7*c = 0
-    */
   fncA();
     /*
-     * 3 + 1*b = 0
-     * 3*a + 1*b = 0
+     * Nedosazitelny stav
     */
 }
 
 function fncA()
   /*
    * 7 + 1*a = 0
-   * 1*a + 7*b = 0
-   * 1*b + 7*c = 0
   */
 {
   b = 4;
     /*
      * 7 + 1*a = 0
-     * 1*a + 7*c = 0
-     * 7*b + 4*c = 0
+     * 4*a + 7*b = 0
     */
-  if (a < ++b)
+  fncC();
     /*
-     * 7 + 1*a = 0
-     * 5*a + 7*b = 0
-     * 1*b + 3*c = 0
+     * Nedosazitelny stav
     */
-  {
-    c++;
-      /*
-       * 7 + 1*a = 0
-       * 5*a + 7*b = 0
-       * 2*b + 3*c = 0
-      */
-  }
+  fncB();
     /*
-     * 3 + 1*b = 0
-     * 3*a + 1*b = 0
+     * Nedosazitelny stav
+    */
+  c = 5;
+    /*
+     * Nedosazitelny stav
+    */
+}
+
+function fncB()
+  /*
+   * Nedosazitelny stav
+  */
+{
+  c = 3 * a + 4 * b;
+  fncA();
+  b = 3 + 4 * a;
+}
+
+function fncC()
+  /*
+   * 6 + 2*a = 0
+   * 4*a + 3*b = 0
+  */
+{
+  a = 5;
+    /*
+     * 3 + 1*a = 0
+     * 4*a + 3*b = 0
+    */
+  fncC();
+    /*
+     * Nedosazitelny stav
+    */
+  b = 4;
+    /*
+     * Nedosazitelny stav
     */
 }
