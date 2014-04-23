@@ -104,15 +104,18 @@ namespace InterproceduralAnalysis
                 WriteLinearEquations(ast.ConvertCondition.Node, vars, p);
 
             WriteBody(ast.IfBody, vars, p, writeLE);
-            if (writeLE)
-                WriteLinearEquations(ast.ConvertIfEndBody.Node, vars, p);
-            
+
             if (ast.ElseBody != null)
             {
                 file.WriteLine("{0}else", p);
                 WriteBody(ast.ElseBody, vars, p, writeLE);
                 if (writeLE)
                     WriteLinearEquations(ast.ConvertElseEndBody.Node, vars, p);
+            }
+            else if (writeLE)
+            {
+                WriteLinearEquations(ast.ConvertIfEndBody.Node, vars, p);
+
             }
         }
 
