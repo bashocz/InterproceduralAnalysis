@@ -138,7 +138,7 @@ namespace InterproceduralAnalysis
                         Console.WriteLine();
                         return false;
                     }
-                    if ((wInt < 1) && (wInt > 32))
+                    if ((wInt < 1) || (wInt > 63))
                     {
                         Console.WriteLine("Parametr rozsah celocislenych promennych w='{0}' musi byt v rozsahu <1,32>.", wInt);
                         Console.WriteLine();

@@ -28,7 +28,7 @@ namespace InterproceduralAnalysis
         private int GetPrime(int w)
         {
             int p = w;
-            while (!IsPrime(p))
+            while (!IsPrime(p) || (p == 17))
                 p++;
             return p;
         }
@@ -51,7 +51,7 @@ namespace InterproceduralAnalysis
             int[] a = new int[p];
             for (int i = 0; i < w; i++)
             {
-                long idx = (long)(1L << i) % p;
+                long idx = (1L << i) % p;
                 a[idx] = i;
             }
             a[0] = var_w;

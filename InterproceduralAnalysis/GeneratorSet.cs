@@ -104,7 +104,7 @@ namespace InterproceduralAnalysis
                 if ((tvr.Lentry != 0) && ((tvr.Lentry % 2) == 0))
                     AddEven(tvr);
 
-                GArr[i] = tvr;
+                InsertVector(i, tvr);
 
                 return true;
             }
