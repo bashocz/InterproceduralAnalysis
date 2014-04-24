@@ -42,7 +42,7 @@ namespace InterproceduralAnalysis
         {
             Dictionary<string, TokenTypes> d = new Dictionary<string, TokenTypes>();
 
-            // reservovana slova
+            // klicova slova
             d.Add("var", TokenTypes.VarRW);
             d.Add("function", TokenTypes.FunctionRW);
             d.Add("if", TokenTypes.IfRW);
@@ -88,15 +88,13 @@ namespace InterproceduralAnalysis
                 return ch;
             }
 
-            // precti znak ze souboru
             ch = Convert.ToChar(file.Read());
             chCol++;
-            if (ch == '\u000a') // toto je novy radek
+            if (ch == '\u000a') 
             {
                 chLine++;
                 chCol = 0;
             }
-            // zjisti, co je dalsi znak
             next = Convert.ToChar((!file.EndOfStream) ? file.Peek() : 0);
             eof = file.EndOfStream;
 
@@ -201,7 +199,6 @@ namespace InterproceduralAnalysis
                 case '/':
                     if (next == '/')
                     {
-                        // precist komentar do konce radku
                         while ((next != '\u000a') && (next != '\u000d') && (!eof))
                         {
                             tokenText += ReadChar();
@@ -231,10 +228,10 @@ namespace InterproceduralAnalysis
                     errorMsg = string.Format("Neznamy znak '{0}', radek {1}, sloupec {2}", ch, chLine, chCol);
                     return TokenTypes.Error;
 
-                // reservovana slova, identifikatory & cisla & nezname znaky
+                // klicova slova, identifikatory & cisla & nezname znaky
                 default:
 
-                    if (IsCharacter(ch)) // identifikator | rezervovane slovo
+                    if (IsCharacter(ch)) // identifikator | klicove slovo
                     {
                         while (IsCharacterOrDigitChar(next))
                         {
@@ -254,7 +251,7 @@ namespace InterproceduralAnalysis
                         {
                             len = tokenText.Length;
 
-                            if (!(IsDigit(next) || (hexa && IsHexaDigit(next)))) // neni to cislice, ci sestnackova cislice
+                            if (!(IsDigit(next) || (hexa && IsHexaDigit(next)))) 
                             {
                                 if (IsCharacter(next))
                                 {
@@ -264,7 +261,6 @@ namespace InterproceduralAnalysis
                                         tokenText += ReadChar();
                                         continue;
                                     }
-                                    // pismeno v cisle znamena syntaktickou chybu
                                     errorMsg = string.Format("Neznamy znak '{0}', radek {1}, sloupec {2}", next, chLine, chCol + 1);
                                     return TokenTypes.Error;
                                 }
@@ -276,7 +272,7 @@ namespace InterproceduralAnalysis
                         }
 
                         char last = tokenText[tokenText.Length - 1];
-                        if (!(IsDigit(last) || (hexa && IsHexaDigit(last)))) // tato podminka se vylepsi...
+                        if (!(IsDigit(last) || (hexa && IsHexaDigit(last)))) 
                         {
                             errorMsg = string.Format("Spatny format cisla '{0}', radek {1}, sloupec {2}", tokenText, tokenStartLine, tokenStartCol);
                             return TokenTypes.Error;
@@ -312,7 +308,7 @@ namespace InterproceduralAnalysis
                     yield break;
                 }
 
-                if (token == TokenTypes.End) // konec cteni souboru
+                if (token == TokenTypes.End) 
                     break;
 
                 if (token != TokenTypes.Whitespace)
@@ -342,7 +338,7 @@ namespace InterproceduralAnalysis
             if (errorToken != null)
                 return false;
             if (tokenIdx >= tokens.Count)
-                return true; // konec souboru, vsechny tokeny precteny :-)
+                return true; 
 
             bool loop = true;
             while (loop)

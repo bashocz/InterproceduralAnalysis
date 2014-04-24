@@ -246,10 +246,10 @@ namespace InterproceduralAnalysis
 
         public BaseAst ReverseAst { get; set; }
 
-        public IaEdge Next { get; set; } // for all statements
+        public IaEdge Next { get; set; } 
 
-        public IaEdge IsTrue { get; set; } // for if statement
-        public IaEdge IsFalse { get; set; } // for if statement
+        public IaEdge IsTrue { get; set; } 
+        public IaEdge IsFalse { get; set; } 
 
         public IEnumerable<IaEdge> Edges
         {

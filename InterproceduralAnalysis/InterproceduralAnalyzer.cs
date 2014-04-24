@@ -33,9 +33,9 @@ namespace InterproceduralAnalysis
         private void CreateTransitionMatrixes(ProgramAst prg)
         {
             Queue<IaNode> q = new Queue<IaNode>();
-            q.Enqueue(prg.VarGraph); // variables
+            q.Enqueue(prg.VarGraph); 
             foreach (string name in prg.OrigFncs.Keys)
-                q.Enqueue(prg.Graph[name]); // functions
+                q.Enqueue(prg.Graph[name]); 
 
             while (q.Count > 0)
             {
@@ -111,13 +111,13 @@ namespace InterproceduralAnalysis
                         {
                             IaNode to = edge.To;
 
-                            // algoritmus 2
+                            // pruchod hranou s maticemi
                             foreach (long[][] a_mtx in edge.MatrixSet.TMatrixes)
                             {
                                 long[][] mtx = bg.MatrixMultiMatrix(a_mtx, pair.Matrix, bfm.var_m);
                                 long[] xi = bg.MatrixToVector(mtx);
                                 LeadVector x = new LeadVector(xi);
-                                if (x.Lidx >= 0) // neni to nulovy vektor
+                                if (x.Lidx >= 0) 
                                 {
                                     if (to.FunctionGSet.AddVector(x))
                                     {
@@ -129,16 +129,11 @@ namespace InterproceduralAnalysis
                                 }
                             }
                         }
-                        else
-                        {
-                            // algoritmus 3
-                        }
                     }
                 }
                 else
                 {
-                    // algoritmus 4
-
+                    // pokud se jedna o konecny uzel funkce
                     foreach (IaEdge edge in fncCallEdges)
                     {
                         if ((edge.Ast == null) || (edge.Ast.AstType != AstNodeTypes.FunctionCall))
@@ -157,7 +152,7 @@ namespace InterproceduralAnalysis
                                 long[][] mtx = bg.MatrixMultiMatrix(pair.Matrix, matrix, bfm.var_m);
                                 long[] xi = bg.MatrixToVector(mtx);
                                 LeadVector x = new LeadVector(xi);
-                                if (x.Lidx >= 0) // neni to nulovy vektor
+                                if (x.Lidx >= 0) 
                                 {
                                     if (to.FunctionGSet.AddVector(x))
                                     {
@@ -173,7 +168,7 @@ namespace InterproceduralAnalysis
                     }
                 }
             }
-            // algoritmus 5
+            // distribuce mnozin zmenovych matic z vystupnich uzlu na hrany volajici funkce
             foreach (string fncName in prg.LastNode.Keys)
             {
                 IaNode last = prg.LastNode[fncName];
@@ -217,26 +212,6 @@ namespace InterproceduralAnalysis
             }
         }
 
-        //private void CreateEmptyG(ProgramAst prg)
-        //{
-        //    foreach (IaNode node in prg.Graph.Values)
-        //    {
-        //        Queue<IaNode> q = new Queue<IaNode>();
-        //        q.Enqueue(node);
-        //        while (q.Count > 0)
-        //        {
-        //            IaNode n = q.Dequeue();
-        //            if (n.GeneratorSet == null)
-        //            {
-        //                n.GeneratorSet = new GeneratorSet(n, bg);
-        //                foreach (IaEdge edge in n.Edges)
-        //                    if (edge.To.GeneratorSet == null)
-        //                        q.Enqueue(edge.To);
-        //            }
-        //        }
-        //    }
-        //}
-
         private Queue<NodeVector> VariableGeneratorSets(ProgramAst prg)
         {
             Queue<NodeVector> w_queue = new Queue<NodeVector>();
@@ -262,7 +237,7 @@ namespace InterproceduralAnalysis
                         {
                             long[] xi = bg.MatrixMultiVector(a_mtx, pair.Vector.Vr, bg.var_m);
                             LeadVector x = new LeadVector(xi);
-                            if (x.Lidx >= 0) // neni to nulovy vektor
+                            if (x.Lidx >= 0) 
                             {
                                 if (to.GeneratorSet == null)
                                     to.GeneratorSet = new GeneratorSet(to, bg);
@@ -278,8 +253,9 @@ namespace InterproceduralAnalysis
                         }
                     }
                 }
-                else // konec definice promennych
+                else 
                 {
+                    // konec definice promennych
                     main.GeneratorSet.AddVector(pair.Vector);
                     w_queue.Enqueue(new NodeVector { Node = main, Vector = pair.Vector });
                 }
@@ -320,7 +296,7 @@ namespace InterproceduralAnalysis
                     {
                         long[] xi = bg.MatrixMultiVector(a_mtx, pair.Vector.Vr, bg.var_m);
                         LeadVector x = new LeadVector(xi);
-                        if (x.Lidx >= 0) // neni to nulovy vektor
+                        if (x.Lidx >= 0) 
                         {
                             if (to.GeneratorSet == null)
                                 to.GeneratorSet = new GeneratorSet(to, bg);

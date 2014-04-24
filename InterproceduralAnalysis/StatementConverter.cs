@@ -88,7 +88,6 @@ namespace InterproceduralAnalysis
             internalLabelIdx++;
             int idx = internalLabelIdx;
 
-            // this label is not needed, but for better orientation in final code
             block.Add(new BaseAst { Token = TokenTypes.Identifier, AstType = AstNodeTypes.Label, TokenText = string.Format("$IfBegin{0}", idx) });
 
             ConditionAst cond = ConvertTo<ConditionAst>(node, AstNodeTypes.Condition);
@@ -130,7 +129,6 @@ namespace InterproceduralAnalysis
             internalLabelIdx++;
             int idx = internalLabelIdx;
 
-            // this label is not needed, but for better orientation in final code
             block.Add(new BaseAst { Token = TokenTypes.Identifier, AstType = AstNodeTypes.Label, TokenText = string.Format("$WhileBegin{0}", idx) });
 
             ConditionAst cond = ConvertTo<ConditionAst>(node, AstNodeTypes.Condition);
@@ -158,7 +156,6 @@ namespace InterproceduralAnalysis
             internalLabelIdx++;
             int idx = internalLabelIdx;
 
-            // this label is not needed, but for better orientation in final code
             block.Add(new BaseAst { Token = TokenTypes.Identifier, AstType = AstNodeTypes.Label, TokenText = string.Format("$ForBegin{0}", idx) });
 
             IEnumerable<BaseAst> st = ConvertStatement(node.Init);

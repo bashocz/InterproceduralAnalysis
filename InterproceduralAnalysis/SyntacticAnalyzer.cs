@@ -7,7 +7,6 @@ namespace InterproceduralAnalysis
 {
     class SyntacticAnalyzer
     {
-        // tridni promenne pro syntaktickou analyzu
         private BaseAst actualNode, nextNode;
 
         private LexicalAnalyzer la;
@@ -19,7 +18,6 @@ namespace InterproceduralAnalysis
 
         private ProgramAst program;
 
-        // tridni promenne pro prioritu operatoru
         private const int opMax = 71;
         private IDictionary<TokenTypes, int> op;
         private IDictionary<TokenTypes, int> OP
@@ -84,7 +82,7 @@ namespace InterproceduralAnalysis
 
         private void SetNumber(NumberAst token)
         {
-            // to-do
+
         }
 
         private void SetOperatorPriority(OperatorAst token)
@@ -197,7 +195,7 @@ namespace InterproceduralAnalysis
                 switch (actualNode.Token)
                 {
                     case TokenTypes.Comma:
-                        ReadNextAst(); // precist oddelovac a pripravit se na dalsi promennou
+                        ReadNextAst(); 
                         break;
 
                     case TokenTypes.Semicolon:
@@ -354,8 +352,8 @@ namespace InterproceduralAnalysis
                     semicolon = true;
                     break;
 
-                case TokenTypes.BraceLeft: // to je zacatek vnitrniho blocku -> volajici metoda si rozhodne co s tim
-                case TokenTypes.BraceRight: // to je konec blocku -> volajici metoda rozhodne co s tim
+                case TokenTypes.BraceLeft: 
+                case TokenTypes.BraceRight: 
                     node = actualNode;
                     break;
 
@@ -646,14 +644,6 @@ namespace InterproceduralAnalysis
 
             cmd.AstType = AstNodeTypes.Return;
 
-            // nas return nepodporuje navratove hodnoty (jelikoz to by znamenalo pripustit lokalni promenne)
-
-            //BaseAst expr;
-            //BaseAst tmp = GetExprAST(out expr);
-            //if (tmp.IsError)
-            //    return tmp;
-            //cmd.Return = expr;
-
             return cmd;
         }
 
@@ -667,9 +657,6 @@ namespace InterproceduralAnalysis
                 return BaseAst.GetErrorAstNode("Chybne volana funkce 'GetFunctionCallAST(BaseAst cmd)', parametr 'cmd' je null");
 
             cmd.AstType = AstNodeTypes.FunctionCall;
-
-            //if (!program.OrigFncs.Keys.Contains(cmd.TokenText))
-            //    return GetErrorAstNode(string.Format("Funkce '{0}' doposud nebyla deklarovana, radek {1}, sloupec {2}", cmd.TokenText, cmd.TokenStartLine, cmd.TokenStartColumn));
 
             ReadNextAst();
             if (actualNode.Token != TokenTypes.ParenthesisLeft)
@@ -802,7 +789,6 @@ namespace InterproceduralAnalysis
                     switch (actualNode.Token)
                     {
                         case TokenTypes.VarRW:
-                            // to-do
                             node = BaseAst.GetErrorAstNode("Momentalne nepodporujeme '- variable'");
                             return false;
 
@@ -945,7 +931,7 @@ namespace InterproceduralAnalysis
             BaseAst node = null;
             List<BaseAst> nodes = new List<BaseAst>();
 
-            // number or identifier or left parenthesis
+            // cislo, identifikator nebo leva zavorka
             if (!GetOperandNode(out node))
             {
                 switch (node.Token)
@@ -954,7 +940,7 @@ namespace InterproceduralAnalysis
                         if (isCond)
                         {
                             OperatorAst nodeN = (OperatorAst)node;
-                            GetOperandNode(out node); // must be '('
+                            GetOperandNode(out node); 
                             if (node.Token != TokenTypes.ParenthesisLeft)
                                 return BaseAst.GetErrorAstNode(string.Format("Po operaci negace je ocekavana leva zavorka, radek {0}, sloupec {1}", node.TokenStartLine, node.TokenStartColumn));
                             BaseAst nodePRn = GetSubExprAST(out node, level + 1, isCond);
@@ -1009,8 +995,6 @@ namespace InterproceduralAnalysis
                     }
                     continue;
                 }
-                //if (!isCond && ((node.Token == TokenTypes.Multi) && (nodes[nodes.Count - 1].Token != TokenTypes.Number)))
-                //    return BaseAst.GetErrorAstNode(string.Format("Pred nasobenim muze byt pouze cislo, radek {0}, sloupec {1}", node.TokenStartLine, node.TokenStartColumn));
 
                 nodes.Add(node);
 
@@ -1022,7 +1006,7 @@ namespace InterproceduralAnalysis
                             if (isCond)
                             {
                                 OperatorAst nodeN = (OperatorAst)node;
-                                GetOperandNode(out node); // must be '('
+                                GetOperandNode(out node);
                                 if (node.Token != TokenTypes.ParenthesisLeft)
                                     return BaseAst.GetErrorAstNode(string.Format("Po operaci negace je ocekavana leva zavorka, radek {0}, sloupec {1}", node.TokenStartLine, node.TokenStartColumn));
                                 BaseAst nodePRn = GetSubExprAST(out node, level + 1, isCond);
@@ -1082,7 +1066,7 @@ namespace InterproceduralAnalysis
                         i += 2;
                 }
 
-                op += 10; // increase operation priority
+                op += 10; 
             }
             if (nodes.Count != 1)
                 return BaseAst.GetErrorAstNode("Nespravne formatovany vyraz... nedobre utvoreny AST");

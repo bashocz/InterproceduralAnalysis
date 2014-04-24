@@ -36,10 +36,7 @@ namespace InterproceduralAnalysis
                 Console.ReadKey();
                 return -1;
             }
-
-
-
-
+            
             LexicalAnalyzer la = new LexicalAnalyzer(programFile, printLA);
             SyntacticAnalyzer sa = new SyntacticAnalyzer(la);
             ProgramAst prg;
@@ -235,26 +232,26 @@ namespace InterproceduralAnalysis
         {
             Console.WriteLine();
             Console.WriteLine("Pouziti:");
-            Console.WriteLine("    intprocan.exe /p <jmeno_program> /w <rozsah_int> [ /? |");
+            Console.WriteLine("    intprocan.exe /p <jmeno_programu> /w <rozsah_int> [ /? |");
             Console.WriteLine("                                                       /d [all+la+sa+iam+iag+iale]");
             Console.WriteLine();
             Console.WriteLine("Kde:");
-            Console.WriteLine("    /p <jmeno_program>    povinny parametr - jmeno programu");
-            Console.WriteLine("    /w <rozsah_int>       povinny parametr - je rozsah celociselnych promennych 2^w, kde w = <1,32>");
+            Console.WriteLine("    /p <jmeno_programu>   povinny parametr - jmeno programu");
+            Console.WriteLine("    /w <rozsah_int>       povinny parametr - je rozsah celociselnych promennych 2^w, kde w = <1,64)");
             Console.WriteLine("Volitelne:");
             Console.WriteLine("    /?                    zobrazeni napovedy");
             Console.WriteLine("    /d                    zobrazeni pomocnych vypisu");
             Console.WriteLine("    /d all                zobrazeni vsech pomocnych vypisu");
             Console.WriteLine("    /d la                 zobrazeni pomocnych vypisu lexikalni analyzy");
             Console.WriteLine("    /d sa                 zobrazeni pomocnych vypisu prevodu AST na podminku a goto");
-            Console.WriteLine("    /d iam                zobrazeni pomocnych vypisu interproceduralni analyzy vypoctu prechodovych matic");
+            Console.WriteLine("    /d iam                zobrazeni pomocnych vypisu interproceduralni analyzy vypoctu zmenovych matic");
             Console.WriteLine("    /d iag                zobrazeni pomocnych vypisu interproceduralni analyzy vypoctu generatoru");
             Console.WriteLine("    /d iale               zobrazeni pomocnych vypisu interproceduralni analyzy vypoctu linearnich rovnic");
             Console.WriteLine();
             Console.WriteLine("Priklady:");
-            Console.WriteLine("    > intprocan.exe /p program.txt");
-            Console.WriteLine("    > intprocan.exe /p C:\\project\\program.txt /d all");
-            Console.WriteLine("    > intprocan.exe /p C:\\project\\program.txt /d la+sa+iale");
+            Console.WriteLine("    > intprocan.exe /p program.txt /w 3");
+            Console.WriteLine("    > intprocan.exe /p C:\\project\\program.txt /w 8 /d all");
+            Console.WriteLine("    > intprocan.exe /p C:\\project\\program.txt /w 32 /d la+sa+iale");
             Console.WriteLine();
         }
     }

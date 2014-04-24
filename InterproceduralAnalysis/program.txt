@@ -1,10 +1,49 @@
-﻿var a, b;
+﻿var a,b;
 
 function main()
 {
-  a = 0;
-  if (a>b)
+  a = 38 + 12*a - 44*b;
+  b = 42 + 38*a + 146*b;
+  while ( b > 0 )
   {
-    a = 1;
+    b = 34 + 16*a + 38*b;
+    a++;
+    b--;                       
   }
+  fncA();
+  b = 84*a + 16*b;
+}
+
+function fncA()
+{
+  if (b*2 > a)
+  {
+    fncB();
+  }
+  else
+  {
+    fncC();
+  }
+}
+
+function fncB()
+{
+  for (a = 1; a < b; a++)
+  {
+    a = 64 + 24*a - 12*b;
+    b = 22 - 14*a*b; 
+    fncA();
+  }
+  a = 24 + 36*a + 62*b;
+}
+
+function fncC()
+{
+  while (++a > b--)
+  {
+    a = 32*b + 156;
+    b = 42 + 126*a;
+  }
+  a = 2*a + 36;
+  b = 6*b + 86;
 }
