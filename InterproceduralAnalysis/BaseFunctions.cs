@@ -21,14 +21,27 @@ namespace InterproceduralAnalysis
             var_m = 1L << w;
             var_n = n + 1; 
 
-            prime = GetPrime(var_w);
-            r_arr = GetRArray(var_w, prime);
+            GetPrimeAndRArray(var_w, out prime, out r_arr);
+        }
+
+        private void GetPrimeAndRArray(int w, out int p, out int[] a)
+        {
+            p = GetPrime(w + 1);
+            a = null;
+            bool found = false;
+            while (!found)
+            {
+                if (!(found = GetRArray(w, p, out a)))
+                {
+                    p = GetPrime(p + 1);
+                }
+            }
         }
 
         private int GetPrime(int w)
         {
             int p = w;
-            while (!IsPrime(p) || (p == 17))
+            while (!IsPrime(p))
                 p++;
             return p;
         }
@@ -46,16 +59,21 @@ namespace InterproceduralAnalysis
             return true;
         }
 
-        private int[] GetRArray(int w, int p)
+        private bool GetRArray(int w, int p, out int[] a)
         {
-            int[] a = new int[p];
+
+            a = new int[p];
+            for (int i = 0; i < p; i++)
+                a[i] = -1;
             for (int i = 0; i < w; i++)
             {
                 long idx = (1L << i) % p;
+                if (a[idx] >= 0)
+                    return false;
                 a[idx] = i;
             }
-            a[0] = var_w;
-            return a;
+            a[0] = w;
+            return true;
         }
 
         public int Reduction(long nr, out long d)
