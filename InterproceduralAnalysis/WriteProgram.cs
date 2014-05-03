@@ -29,20 +29,7 @@ namespace InterproceduralAnalysis
                     int i = 0;
                     while ((i < node.LinearEquations.GArr.Length) && (node.LinearEquations.GArr[i] != null))
                     {
-                        string le = string.Empty;
-                        long[] a = node.LinearEquations.GArr[i].Vr;
-                        if (a[0] > 0)
-                            le += string.Format("{0}", a[0]);
-                        for (int j = 1; j < a.Length; j++)
-                        {
-                            if (a[j] > 0)
-                            {
-                                if (!string.IsNullOrEmpty(le))
-                                    le += " + ";
-                                le += string.Format("{0}*{1}", a[j], vars[j - 1]);
-                            }
-                        }
-                        file.WriteLine("{0} * {1} = 0", p, le);
+                        file.WriteLine("{0} * {1}", p, node.LinearEquations.PrintLE(i, vars));
                         i++;
                     }
                 }

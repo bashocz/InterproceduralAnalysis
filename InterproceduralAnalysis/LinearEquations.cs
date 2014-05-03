@@ -176,6 +176,24 @@ namespace InterproceduralAnalysis
                 Print();
         }
 
+        private void PrintMatrix(string name, long[][] mtx)
+        {
+            Console.WriteLine("{0}:", name);
+
+            int k = mtx.Length;
+            int l = mtx[0].Length;
+
+            for (int j = 0; j < l; j++)
+            {
+                for (int i = 0; i < k; i++)
+                {
+                    Console.Write("{0} ", mtx[i][j]);
+                }
+                Console.WriteLine();
+            }
+            Console.WriteLine();
+        }
+
         public void CalculateLE()
         {
             //if (parent.GeneratorSet == null)
@@ -196,22 +214,25 @@ namespace InterproceduralAnalysis
             }
         }
 
-        private void PrintMatrix(string name, long[][] mtx)
+        public string PrintLE(int i, List<string> vars)
         {
-            Console.WriteLine("{0}:", name);
+            string le = string.Empty;
 
-            int k = mtx.Length;
-            int l = mtx[0].Length;
-
-            for (int j = 0; j < l; j++)
+            long[] a = GArr[i].Vr;
+            for (int j = 1; j < a.Length; j++)
             {
-                for (int i = 0; i < k; i++)
+                if (a[j] > 0)
                 {
-                    Console.Write("{0} ", mtx[i][j]);
+                    if (!string.IsNullOrEmpty(le))
+                        le += " + ";
+                    le += string.Format("{0}*{1}", a[j], vars[j - 1]);
                 }
-                Console.WriteLine();
             }
-            Console.WriteLine();
+            long c = 0;
+            if (a[0] > 0)
+                c = var_m - a[0];
+
+            return string.Format("{0} = {1}", le, c);
         }
     }
 }
